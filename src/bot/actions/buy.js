@@ -1,5 +1,5 @@
 import { Markup } from "telegraf";
-import { getProductById, getProducts } from "../../utils/product.js";
+import { getProductById } from "../../utils/productUtil.js";
 import { showProducts } from "./products.js";
 
 
@@ -26,29 +26,29 @@ export default (bot) => {
     });
 
     // Nhận số lượng từ người dùng
-    bot.on("text", async (ctx) => {
-        const product = ctx.session.selectedProduct;
-        if (!product) {
-            ctx.reply("❌ error, please try again");
-            return;
-        }
+    // bot.on("text", async (ctx) => {
+    //     const product = ctx.session.selectedProduct;
+    //     if (!product) {
+    //         ctx.reply("❌ error, please try again");
+    //         return;
+    //     }
 
-        const qty = parseInt(ctx.message.text);
-        if (isNaN(qty) || qty <= 0)
-            return ctx.reply("❌ Please enter a valid quantity!");
-        if (qty > product.stock)
-            return ctx.reply("❌ Quantity exceeds available stock!");
+    //     const qty = parseInt(ctx.message.text);
+    //     if (isNaN(qty) || qty <= 0)
+    //         return ctx.reply("❌ Please enter a valid quantity!");
+    //     if (qty > product.stock)
+    //         return ctx.reply("❌ Quantity exceeds available stock!");
 
-        // Deduct stock and confirm order
-        product.stock -= qty;
-        await ctx.reply(
-            `✅ You have successfully ordered *${product.name}* x${qty}!`,
-            { parse_mode: "Markdown" }
-        );
+    //     // Deduct stock and confirm order
+    //     product.stock -= qty;
+    //     await ctx.reply(
+    //         `✅ You have successfully ordered *${product.name}* x${qty}!`,
+    //         { parse_mode: "Markdown" }
+    //     );
 
 
-        ctx.session.selectedProduct = null;
+    //     ctx.session.selectedProduct = null;
 
-    });
+    // });
 
 };

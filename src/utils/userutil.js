@@ -1,66 +1,152 @@
-import fs from "fs/promises";
-import path from "path";
-import { fileURLToPath } from "url";
-// import products from "../bot/commands/actions/products";
-// import { get } from "http";
+import { db } from "./database.js";
 
-// Lấy đường dẫn tuyệt đối đến file hiện tại
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// => Đường dẫn chính xác đến file JSON
-const jsonPath = path.join(__dirname, "../resource/users.json");
-
+// Lấy toàn bộ user
 const getUserAll = async () => {
+    try {
+        const [rows] = await db.query("SELECT * FROM users");
+        return rows;
+    } catch (error) {
+        console.error("❌ Lỗi khi lấy danh sách user:", error);
+        throw error;
+    }
+};
 
+const getUsersByPage = async (page = 0, limmit = 10) => {
+    try {
+        const [rows] = await db.query("SELECT id, username, balance, transaction FROM users ORDER BY id ASC LIMIT ? OFFSET ?", [limmit, page * limmit]);
+        const [[{ total }]] = await db.query("SELECT COUNT(*) AS total FROM users");
+        const totalPages = Math.ceil(total / limmit);
+        return {
+            users: rows,
+            page: page + 1,
+            totalPages,
+            totalUsers: total
+        };
+    } catch (error) {
+        console.error(error);
+        return []
+    }
 }
 
+// Lấy user theo ID
 const getUserById = async (id) => {
     try {
-        const data = await fs.readFile(jsonPath, "utf8");
-        const users = JSON.parse(data);
-        const user = users.find(user => user.id === id);
+        const [rows] = await db.query("SELECT * FROM users WHERE id = ?", [id]);
+        return rows.length > 0 ? rows[0] : null;
+    } catch (error) {
+        console.error("❌ Lỗi khi lấy user theo ID:", error);
+        throw error;
+    }
+};
+
+const getUserByUsername = async (username) => {
+    try {
+        const [rows] = await db.query("SELECT * FROM users WHERE username = ?", [username]);
+        return rows.length > 0 ? rows[0] : null;
+    } catch (error) {
+        console.error("❌ Lỗi khi lấy user theo username:", error);
+        throw error;
+    }
+};
+
+// Thêm user nếu chưa có
+const addUser = async (user) => {
+    const {
+        id,
+        is_bot,
+        first_name,
+        last_name,
+        username,
+        language_code,
+        balance = 0,
+        block = false,
+        transaction = 0,
+    } = user;
+
+    try {
+        // Kiểm tra tồn tại
+        const [rows] = await db.query("SELECT * FROM users WHERE id = ?", [id]);
+
+        if (rows.length > 0) {
+            // Nếu đã có thì trả về user cũ
+            return rows[0];
+        }
+
+        // Nếu chưa có thì thêm mới
+        await db.query(
+            `INSERT INTO users
+      (id, is_bot, first_name, last_name, username, language_code, balance, block, transaction)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                id,
+                is_bot,
+                first_name,
+                last_name,
+                username,
+                language_code,
+                balance,
+                block,
+                transaction,
+            ]
+        );
+
+        console.log(`✅ User ${username || first_name} đã được thêm.`);
         return user;
     } catch (error) {
-        return {};
+        console.error("❌ Lỗi trong addUser:", error);
+        throw error;
     }
+};
 
+const updateUser = async (id, fields = {}) => {
+    try {
+        // Tạo mảng key-value động
+        const keys = Object.keys(fields);
+        const values = Object.values(fields);
+
+        if (keys.length === 0) throw new Error("No fields to update");
+
+        const setClause = keys.map((key) => `${key} = ?`).join(", ");
+        const sql = `UPDATE users SET ${setClause} WHERE id = ?`;
+
+        await db.query(sql, [...values, id]);
+    } catch (error) {
+        console.error("❌ Error updating user:", error);
+        throw error;
+    }
+};
+
+const isAdmin = async (id) => {
+    try {
+        const [rows] = await db.query("SELECT is_admin FROM users WHERE id = ?", [id]);
+
+        if (rows.length === 0) return false;
+        const user = rows[0];
+        return Boolean(user.is_admin);
+    } catch (error) {
+        console.error("❌ Lỗi khi lấy user theo ID:", error);
+        throw error;
+    }
 }
 
-const addUser = async (user) => {
+const addAdmin = async (id) => {
     try {
-        // Đọc dữ liệu từ file
-        const data = await fs.readFile(jsonPath, "utf8");
-        const users = JSON.parse(data);
-
-        // Tìm user đã có chưa
-        const existingUser = users.find((u) => u.id === user.id);
-
-        if (existingUser) {
-            // Nếu đã tồn tại thì trả về user đó
-            return existingUser;
-        }
-
-        // Nếu chưa có thì thêm mới và ghi lại file
-        users.push(user);
-        await fs.writeFile(jsonPath, JSON.stringify(users, null, 2), "utf8");
-
-        return user;
-
+        const [rows] = await db.query("UPDATE users SET is_admin = 1 WHERE id = ?", [id]);
+        return rows.length > 0 ? rows[0] : null;
     } catch (error) {
-        // Nếu file chưa tồn tại hoặc lỗi parse, tạo file mới
-        if (error.code === "ENOENT") {
-            await fs.writeFile(jsonPath, JSON.stringify([user], null, 2), "utf8");
-            return user;
-        }
-
-        console.error("❌ Lỗi trong addUser:", error);
+        console.error("❌ Lỗi khi lấy user theo ID:", error);
         throw error;
     }
 }
 
 export {
+    updateUser,
     getUserAll,
     getUserById,
-    addUser
+    getUserByUsername,
+    getUsersByPage,
+    addUser,
+    isAdmin,
+    addAdmin
 }
+
