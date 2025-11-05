@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
   is_bot BOOLEAN DEFAULT 0,
   first_name VARCHAR(100),
   last_name VARCHAR(100),
-  username VARCHAR(100),
+  username VARCHAR(100) DEFAULT "no_username",
   language_code VARCHAR(10),
   balance DECIMAL(15,2) DEFAULT 0,
   is_admin BOOLEAN DEFAULT 0,
@@ -28,4 +28,20 @@ CREATE TABLE IF NOT EXISTS stocks (
   is_sold BOOLEAN DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id varchar(20) NOT NULL,
+  product_id INT NOT NULL,
+  product_name VARCHAR(255) NOT NULL,
+  quantity INT DEFAULT 1,
+  note TEXT,                       -- nội dung kèm theo
+  total_price DECIMAL(15,2) NOT NULL,
+  is_completed BOOLEAN DEFAULT false,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_order_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );

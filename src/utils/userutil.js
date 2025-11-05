@@ -59,7 +59,7 @@ const addUser = async (user) => {
         username,
         language_code,
         balance = 0,
-        block = false,
+        is_block = false,
         transaction = 0,
     } = user;
 
@@ -75,7 +75,7 @@ const addUser = async (user) => {
         // Nếu chưa có thì thêm mới
         await db.query(
             `INSERT INTO users
-      (id, is_bot, first_name, last_name, username, language_code, balance, block, transaction)
+      (id, is_bot, first_name, last_name, username, language_code, balance, is_block, transaction)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 id,
@@ -85,7 +85,7 @@ const addUser = async (user) => {
                 username,
                 language_code,
                 balance,
-                block,
+                is_block,
                 transaction,
             ]
         );
@@ -108,8 +108,10 @@ const updateUser = async (id, fields = {}) => {
 
         const setClause = keys.map((key) => `${key} = ?`).join(", ");
         const sql = `UPDATE users SET ${setClause} WHERE id = ?`;
-
         await db.query(sql, [...values, id]);
+        const [rows] = await db.query("SELECT * FROM users WHERE id = ?", [id]);
+        return rows[0] || null;
+
     } catch (error) {
         console.error("❌ Error updating user:", error);
         throw error;
@@ -139,6 +141,16 @@ const addAdmin = async (id) => {
     }
 }
 
+const getIdAdmin = async () => {
+    try {
+        const [rows] = await db.query("SELECT id FROM users WHERE is_admin = true");
+        return rows;
+    } catch (error) {
+        console.error("❌ err when get id of admin: ", error);
+        throw error;
+    }
+}
+
 export {
     updateUser,
     getUserAll,
@@ -147,6 +159,7 @@ export {
     getUsersByPage,
     addUser,
     isAdmin,
-    addAdmin
+    addAdmin,
+    getIdAdmin
 }
 

@@ -10,6 +10,7 @@ import { fileURLToPath } from "url";
 import { pathToFileURL } from "url";
 import path from "path";
 import fs from "fs";
+import { setBot } from "./bot/botInstance.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,6 +22,7 @@ if (!TELEGRAM_TOKEN) {
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
 bot.use(session());
+setBot(bot);
 
 // === Hàm load toàn bộ module ===
 

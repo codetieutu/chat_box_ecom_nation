@@ -24,9 +24,9 @@ export default (bot) => {
             parse_mode: "Markdown",
             reply_markup: {
                 inline_keyboard: [
-                    [Markup.button.callback("➕ Thêm sản phẩm", "ADMIN_ADD_PRODUCT")],
-                    [Markup.button.callback("📋 Danh sách sản phẩm", "SHOW_PRODUCTS_0")],
-                    [Markup.button.callback("🔙 Quay lại", "ADMIN_HOME")],
+                    [Markup.button.callback("➕ Add product", "ADMIN_ADD_PRODUCT")],
+                    [Markup.button.callback("📋 List product", "SHOW_ADMIN_PRODUCTS_0")],
+                    [Markup.button.callback("🔙 Back", "ADMIN_HOME")],
                 ],
             },
         });
@@ -45,10 +45,12 @@ const adminMenu = () => {
         reply_markup: {
             inline_keyboard: [
                 [
-                    Markup.button.callback("📦 Quản lý sản phẩm", "ADMIN_PRODUCTS"),
-                    Markup.button.callback("👥 Quản lý người dùng", "ADMIN_USERS"),
-                ],
-                [Markup.button.callback("❌ Thoát", "ADMIN_EXIT")],
+                    Markup.button.callback("📦 Manager product", "ADMIN_PRODUCTS"),
+                    Markup.button.callback("👥 Manager user", "ADMIN_USERS"),
+                ], [
+                    Markup.button.callback("📋 Manager order", "ADMIN_ORDERS_0")
+                ]
+                // [Markup.button.callback("❌ Exit", "SHOW_HOME")],
             ],
         },
     };

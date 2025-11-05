@@ -11,7 +11,7 @@ const showUsers = async (ctx, page = 0) => {
         text += `*Total users:* ${totalUsers}\n\n`;
 
         users.forEach((u, i) => {
-            text += `${i + 1}. @${u.username || "no_username"}\n`;
+            text += `${i + 1}. @${u.username || "no username"}\n`;
             text += `╰ Balance: ${u.balance}$ | Transactions: ${u.transaction}\n\n`;
         });
 

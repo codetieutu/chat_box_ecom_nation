@@ -3,12 +3,21 @@ import { showUserDetail } from "./admin/UserAction.js";
 import { ADMIN_PASSWORD } from "../../utils/env.js";
 import { adminMenu } from "../commands/admin.js";
 import { Markup } from "telegraf";
-import { addProduct } from "../../utils/productUtil.js";
+import { addProduct, updateProduct } from "../../utils/productUtil.js";
+import { showAdminProduct } from "./admin/detailProduct.js";
+import { getProductByQuantity } from "../../utils/stockUtil.js";
+import { exportProductsToTxt } from "../export.js";
+import { showMenu } from "../commands/start.js";
+import { addOrder, completeOrder, getOrderById } from "../../utils/orderUtil.js";
+import { notifyAdmin, notifyUser } from "../sendMess.js";
+import { showOrders } from "./admin/showOrder.js";
+import { checkout } from "../../utils/payment.js";
+
 
 const inputDeposit = async (ctx) => {
     const amount = parseFloat(ctx.message.text);
     if (isNaN(amount) || amount <= 0) {
-        await ctx.reply("❌ Số tiền không hợp lệ, nhập lại:");
+        await ctx.reply("❌ Invalid amount, re-enter:");
         return;
     }
     const userId = ctx.session.depositTarget;
@@ -28,6 +37,70 @@ const inputDeposit = async (ctx) => {
 
 }
 
+const inputQuantity = async (ctx) => {
+    const quantity = parseInt(ctx.message.text);
+    const userId = ctx.from.id;
+    const user = await getUserById(userId);
+
+    const product = ctx.session.selectedProduct;
+    if (isNaN(quantity) || quantity <= 0) {
+        await ctx.reply("❌ Invalid quantity, please re-enter:");
+        return;
+    }
+    if (quantity > product.quantity && product.type === "available") {
+        await ctx.reply("❌ Quantity too large, please re-enter:");
+        return;
+    }
+    if (quantity * parseFloat(product.price) > parseFloat(user.balance)) {
+        await ctx.reply("❌ Insufficient funds, please deposit.");
+        return;
+    }
+    if (product.type === "preorder") {
+        ctx.session.step = "wait_attach_content";
+        ctx.session.quantity = quantity;
+        await ctx.reply("💰 Enter the attached content:", {
+            parse_mode: "Markdown",
+        });
+        return;
+    }
+    const products = await getProductByQuantity(product.id, quantity);
+    await exportProductsToTxt(ctx, products);
+    const userNew = await updateUser(userId, { balance: parseFloat(user.balance) - quantity * parseFloat(product.price), transaction: parseInt(user.transaction) + quantity });
+    ctx.session.selectedProduct = null;
+    ctx.session.step = null
+    showMenu(ctx, userNew);
+
+}
+
+const inputContent = async (ctx) => {
+    const content = ctx.message.text.trim()
+    const quantity = ctx.session.quantity;
+    const product = ctx.session.selectedProduct;
+    const user = await getUserById(ctx.from.id);
+    const order = {
+        userId: ctx.from.id,
+        productId: product.id,
+        productName: product.name,
+        quantity: quantity,
+        note: content,
+        totalPrice: parseFloat(quantity) * parseFloat(product.price)
+    }
+    try {
+        await addOrder(order);
+        await notifyAdmin(`new order ${product.name}:${quantity}`)
+        const userNew = await updateUser(ctx.from.id, { balance: parseFloat(user.balance) - quantity * parseFloat(product.price), transaction: parseInt(user.transaction) + quantity });
+        await ctx.reply("Your order is being processed. Please wait.");
+        ctx.session.selectedProduct = null;
+        ctx.session.step = null
+        ctx.session.quantity = null;
+        showMenu(ctx, userNew);
+    } catch (error) {
+        console.error(error);
+        ctx.reply("❌ Error while placing order. Please try again. ")
+    }
+
+}
+
 const inputPassword = async (ctx) => {
     const password = ctx.message.text.trim();
     if (password === ADMIN_PASSWORD) {
@@ -37,6 +110,83 @@ const inputPassword = async (ctx) => {
         await ctx.reply("❌ Wrong password, Please try again:");
         return;
     }
+    ctx.session.step = null;
+}
+
+const inputCompletedMess = async (ctx) => {
+    const content = ctx.message.text.trim();
+    const orderId = ctx.session.OrderId;
+
+    try {
+        const order = await getOrderById(orderId);
+        if (!order) {
+            await ctx.reply("❌ Order not found.");
+            ctx.session.step = null;
+            ctx.session.targetOrderId = null;
+            return;
+        }
+
+        // Cập nhật trạng thái đơn hàng → completed
+        await completeOrder(orderId);
+
+        // 📩 Gửi thông báo đến người mua
+        const message = `
+✅ *Your Order Has Been Completed!*
+────────────────────
+💬 *Message from Seller:*
+${content}
+`;
+
+        await notifyUser(order.user_id, message);
+
+        // Thông báo lại cho admin
+        await ctx.reply(
+            `✅ Order #${orderId} has been marked as *Completed* and message sent to buyer.`,
+            { parse_mode: "Markdown" }
+        );
+    } catch (err) {
+        console.error("❌ completeOrder error:", err);
+        await ctx.reply("⚠️ Failed to complete the order.");
+    }
+
+    // Reset session
+    ctx.session.step = null;
+    ctx.session.OrderId = null;
+    showOrders(ctx, 0, false)
+}
+
+const inputTxId = async (ctx) => {
+    const txid = ctx.message.text.trim();
+    const time = ctx.session.time;
+    let amount = checkout(txid, time);
+    if (!amount || amount == 0.0) {
+        amount = checkout(txid, 'USDC');
+    }
+    if (!amount || amount == 0.0) {
+        ctx.reply("Transaction not found, Please re-enter.");
+        return;
+    }
+
+    const user = getUserById(ctx.from.id);
+    if (!user) {
+        ctx.reply("error");
+    }
+    const newUser = await updateUser(user.id, { balance: parseFloat(user.balance) + parseFloat(amount) });
+
+    await ctx.reply(
+        `✅ *Deposit Successful!*\n\n💰 *Amount:* ${amount}$\n💼 *New Balance:* ${newUser.balance}$`,
+        {
+            parse_mode: "Markdown",
+            ...Markup.inlineKeyboard([
+                [Markup.button.callback("↩️ Back to Home", "SHOW_HOME_MEDIA")],
+            ]),
+        }
+    );
+    const message = `📢 *New Deposit Received!*\n\n👤 User: @${user.username}\n💰 Amount: ${amount} $\n🧾 Transaction ID: ${id}\n⏱️ Time: ${new Date(transactionTime).toLocaleString("en-US")}`;
+
+    await notifyAdmin(message);
+    ctx.session.time = null
+
     ctx.session.step = null;
 }
 
@@ -50,6 +200,57 @@ export default (bot) => {
             // === Nhập mật khẩu admin ===
             case "waiting_password": {
                 inputPassword(ctx);
+                break;
+            }
+
+            case "waiting_txid": {
+                inputTxId(ctx);
+                break;
+            }
+
+            case "waiting_complete_message": {
+                inputCompletedMess(ctx);
+                break;
+            }
+
+            case "wait_quantity": {
+                inputQuantity(ctx);
+                break;
+            }
+
+            case "wait_attach_content": {
+                inputContent(ctx);
+                break;
+            }
+
+            case "editing_field": {
+                const productId = ctx.session.targetProduct;
+                const field = ctx.session.field;
+                const value = ctx.message.text.trim();
+
+                if (!productId || !field) {
+                    await ctx.reply("⚠️ Editing session not found. Please select a product again.");
+                    ctx.session.step = null;
+                    return;
+                }
+
+                // Validate price
+                if (field === "price") {
+                    const num = parseFloat(value.replace(/,/g, ""));
+                    if (isNaN(num) || num <= 0) {
+                        await ctx.reply("❌ Invalid price. Please enter a valid number:");
+                        return;
+                    }
+                    await updateProduct(productId, { [field]: num });
+                } else {
+                    await updateProduct(productId, { [field]: value });
+                }
+                showAdminProduct(ctx, productId, true);
+
+                // Reset session
+                ctx.session.step = null;
+                ctx.session.field = null;
+                ctx.session.targetProduct = null;
                 break;
             }
 

@@ -2,7 +2,7 @@ import { Markup } from "telegraf";
 import { addUser, getUserById } from "../../utils/userUtil.js";
 import path from "path";
 
-const showHone = async (ctx, u, isEdit = false) => {
+const showMenu = async (ctx, u, edit = false, media = false) => {
     const logoPath = path.join(process.cwd(), "assets/logo.png");
 
     const caption = `
@@ -16,7 +16,7 @@ const showHone = async (ctx, u, isEdit = false) => {
 `;
     const keyboard = Markup.inlineKeyboard([
         [
-            Markup.button.callback("📦 All Products", "SHOW_PRODUCTS_0"),
+            Markup.button.callback("📦 All Products", "SHOW_USER_PRODUCTS_0"),
             // Markup.button.callback("💎 Premium Apps", "PREMIUM_APPS"),
         ],
         [
@@ -25,12 +25,25 @@ const showHone = async (ctx, u, isEdit = false) => {
         ],
     ]);
 
-    if (isEdit) {
-        // Nếu đang ở trong callback → edit caption thay vì gửi tin mới
-        await ctx.editMessageCaption(caption, {
-            parse_mode: "Markdown",
-            ...keyboard,
-        });
+    if (edit) {
+        if (media) {
+            await ctx.editMessageMedia(
+                {
+                    type: "photo",
+                    media: { source: logoPath },
+                    caption: caption, // tuỳ chọn
+                    parse_mode: "Markdown",
+                },
+                {
+                    // reply_markup: keyboard.reply_markup, // hoặc ...keyboard nếu bạn đã dùng Markup.inlineKeyboard()
+                    ...keyboard,
+                }
+            );
+        } else
+            await ctx.editMessageCaption(caption, {
+                parse_mode: "Markdown",
+                ...keyboard,
+            });
     } else {
         // Khi /start → gửi tin nhắn mới
         await ctx.replyWithPhoto(
@@ -46,9 +59,10 @@ const showHone = async (ctx, u, isEdit = false) => {
 
 export default (bot) => {
     bot.start(async (ctx) => {
-        const { id, is_bot, first_name, last_name, username, language_code } = ctx.from;
+        const { id, is_bot, first_name, last_name, username = "no-username", language_code } = ctx.from;
+        console.log(ctx.from);
         const balance = 0;
-        const block = false;
+        const is_block = false;
         const transaction = 0;
         const user = {
             id,
@@ -58,7 +72,7 @@ export default (bot) => {
             username,
             language_code,
             balance,
-            block,
+            is_block,
             transaction
         }
         const u = await addUser(user);
@@ -67,13 +81,23 @@ export default (bot) => {
         // ╰ Produk Terjual: 165, 882 Akun
         // ╰ Total User: 1809
 
-        showHone(ctx, user);
+        showMenu(ctx, user);
 
     });
 
     bot.action("SHOW_HOME", async (ctx) => {
         const { id } = ctx.from;
         const user = await getUserById(id);
-        showHone(ctx, user, true);
+        showMenu(ctx, user, true);
     })
+    bot.action("SHOW_HOME_MEDIA", async (ctx) => {
+        const { id } = ctx.from;
+        const user = await getUserById(id);
+        showMenu(ctx, user, true, true);
+    })
+
 };
+
+export {
+    showMenu
+}

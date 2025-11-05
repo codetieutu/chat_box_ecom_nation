@@ -1,29 +1,32 @@
 import { Markup } from "telegraf";
 import { getProductByPage } from "../../utils/productUtil.js";
 
-const showProducts = async (ctx, page) => {
+const showProducts = async (ctx, page, command = { dir: "", back: "" }) => {
     try {
         const { products, total } = await getProductByPage(page);
         // ==== Tạo text hiển thị ====
         let text = `📋 *PRODUCT LIST (Page ${page + 1}/${total}):*\n\n`;
         products.forEach((p, i) => {
-            text += `${i + 1}. ${p.name} — ${p.price.toLocaleString()}$ (stock: ${p.quantity})\n`;
+            if (p.type === "preorder")
+                text += `${i + 1}. ${p.name} — ${p.price.toLocaleString()}$ (${p.type})\n`;
+            else
+                text += `${i + 1}. ${p.name} — ${p.price.toLocaleString()}$ (stock: ${p.quantity})\n`;
         });
 
         // ==== Tạo nút chọn sản phẩm (5 cột / hàng) ====
         const buttonRows = [];
         for (let i = 0; i < products.length; i += 5) {
             const rowButtons = products.slice(i, i + 5).map((p, idx) =>
-                Markup.button.callback(`${i + idx + 1}`, `buy_${p.id}`)
+                Markup.button.callback(`${i + idx + 1}`, `${command.dir}${p.id}`)
             );
             buttonRows.push(rowButtons);
         }
 
         // ==== Điều hướng trang ====
         const navButtons = [];
-        if (page > 0) navButtons.push(Markup.button.callback("⏮ Prev", `SHOW_PRODUCTS_${page - 1}`));
-        if (page < total - 1) navButtons.push(Markup.button.callback("⏭ Next", `SHOW_PRODUCTS_${page + 1}`));
-        navButtons.push(Markup.button.callback("↩️ Back", `SHOW_HOME`));
+        if (page > 0) navButtons.push(Markup.button.callback("⏮ Prev", `SHOW_USER_PRODUCTS_${page - 1}`));
+        if (page < total - 1) navButtons.push(Markup.button.callback("⏭ Next", `SHOW_USER_PRODUCTS_${page + 1}`));
+        navButtons.push(Markup.button.callback("↩️ Back", `${command.back}`));
         buttonRows.push(navButtons);
 
         // ==== Gửi hoặc cập nhật caption ====
@@ -45,10 +48,15 @@ const showProducts = async (ctx, page) => {
 
 export default (bot) => {
     // Khi bấm nút "SẢN PHẨM"
-    bot.action(/SHOW_PRODUCTS_(\d+)/, async (ctx) => {
+    bot.action(/SHOW_USER_PRODUCTS_(\d+)/, async (ctx) => {
         await ctx.answerCbQuery();
         const page = Number(ctx.match[1]);
-        await showProducts(ctx, page);
+        await showProducts(ctx, page, { dir: "USER_PRODUCT_", back: "SHOW_HOME" });
+    });
+    bot.action(/SHOW_ADMIN_PRODUCTS_(\d+)/, async (ctx) => {
+        await ctx.answerCbQuery();
+        const page = Number(ctx.match[1]);
+        await showProducts(ctx, page, { dir: "ADMIN_PRODUCT_", back: "ADMIN_PRODUCTS" });
     });
 };
 

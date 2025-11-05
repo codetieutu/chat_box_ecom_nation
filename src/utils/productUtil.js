@@ -46,6 +46,7 @@ const getProductById = async (id) => {
 
 // Cập nhật số lượng sản phẩm
 const updateProductQuantity = async (id, delta) => {
+    console.log("check delta", delta);
     await db.query("UPDATE products SET quantity = quantity + ? WHERE id = ?", [delta, id]);
 };
 
@@ -71,6 +72,10 @@ const updateProduct = async (id, fields = {}) => {
 const deleteProduct = async (id) => {
     await db.query("DELETE FROM products WHERE id = ?", [id]);
 };
+
+const getProductbyQuantity = async (id) => {
+
+}
 
 
 export {
