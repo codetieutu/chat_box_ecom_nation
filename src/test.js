@@ -1,74 +1,55 @@
 import axios from "axios";
-import crypto from "crypto";
-import dotenv from "dotenv";
-import { NETWORK } from "./src/utils/env.js";
-dotenv.config();
+import 'dotenv/config';
 
-const API_KEY = process.env.BINANCE_API_KEY;
-const API_SECRET = process.env.BINANCE_API_SECRET;
-const BASE_URL = "https://api.binance.com";
+const API_KEY = process.env.ETHERSCAN_API_KEY;
+const ADDRESS_WALLET = process.env.ADDRESS_WALLET;
+const TX_HASH = "0xdd37bc11ac4c97145c788648823d3326d1b74569363abd086dce84b0037242e7";
+const BASE = "https://api.etherscan.io/v2/api";
+const CHAIN_ID = 56; // BNB Chain
 
-// Tạo chữ ký HMAC SHA256 cho request
-function signQuery(params) {
-    const query = new URLSearchParams(params).toString();
-    const signature = crypto.createHmac("sha256", API_SECRET)
-        .update(query)
-        .digest("hex");
-    return `${query}&signature=${signature}`;
+async function getTokenTransferAmount(txHash) {
+    console.log(">>check address", ADDRESS_WALLET);
+    // 1️⃣ Lấy toàn bộ token transfers của ví nhận
+    const params = {
+        apikey: API_KEY,
+        chainid: CHAIN_ID,
+        module: "account",
+        action: "tokentx",
+        page: 1,
+        offset: 100,
+        sort: "desc",
+        address: ADDRESS_WALLET
+        // địa chỉ ví nhận (từ ảnh bạn gửi)
+    };
+
+    const res = await axios.get(BASE, { params });
+    console.log(">>check res", res.data);
+    const result = res.data.result;
+
+    if (!Array.isArray(result)) {
+        console.error("Không lấy được dữ liệu giao dịch.");
+        return;
+    }
+
+    // 2️⃣ Tìm đúng giao dịch theo hash
+    const tx = result.find(t => t.hash.toLowerCase() === txHash.toLowerCase());
+
+    if (!tx) {
+        console.log("🚫 Không tìm thấy giao dịch.");
+        return;
+    }
+
+    // 3️⃣ Tính số lượng thực tế
+    const amount = Number(tx.value) / 10 ** Number(tx.tokenDecimal);
+
+    console.log(`
+🔹 Token: ${tx.tokenName} (${tx.tokenSymbol})
+🔹 From: ${tx.from}
+🔹 To: ${tx.to}
+🔹 Số lượng: ${amount}
+🔹 Thời gian: ${new Date(tx.timeStamp * 1000).toLocaleString()}
+🔹 TxHash: ${tx.hash}
+  `);
 }
 
-/**
- * Lấy danh sách giao dịch nạp tiền Binance Pay
- * @param {string} coin - Loại coin cần lọc (VD: 'USDT')
- * @param {number} time - Chỉ lấy giao dịch có thời gian lớn hơn timestamp này
- * @returns {Array<{id: string, amount: number, currency: string, transactionTime: string}>}
- */
-const checkout = async (coin = "USDT", time = 0) => {
-    try {
-        const params = {
-            timestamp: Date.now(),
-            recvWindow: 5000,
-            transactionType: 0, // 0 = RECEIVED (inbound payment)
-            beginTime: time, // chỉ lấy sau thời điểm này
-            rows: 100
-        };
-
-        const signed = signQuery(params);
-
-        const res = await axios.get(`${BASE_URL}/sapi/v1/pay/transactions?${signed}`, {
-            headers: { "X-MBX-APIKEY": API_KEY }
-        });
-        console.log(">>check res", res.data)
-        const list = res.data?.data || [];
-
-        // Lọc giao dịch hợp lệ
-        const filtered = list
-            .filter(tx => tx.currency === coin && tx.transactionTime > time)
-            .map(tx => ({
-                id: tx.transactionId,
-                amount: parseFloat(tx.amount),
-                currency: tx.currency,
-                transactionTime: new Date(tx.transactionTime).toISOString(),
-            }));
-
-        return filtered;
-
-    } catch (err) {
-        console.error("❌ Binance checkout error:", err.response?.data || err.message);
-        return [];
-    }
-};
-const main = async () => {
-    const time = new Date("2025-11-02T00:00:00Z").getTime(); // 24h gần nhất
-
-    const deposits = await checkout("USDT", time);
-
-    if (deposits.length) {
-        console.log("Recent Deposits:", deposits);
-    } else {
-        console.log("No deposits found after the given time.");
-    }
-}
-main();
-
-// export { checkout };
+getTokenTransferAmount(TX_HASH);

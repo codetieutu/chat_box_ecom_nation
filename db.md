@@ -45,3 +45,16 @@ CREATE TABLE IF NOT EXISTS orders (
   CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   CONSTRAINT fk_order_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
+
+CREATE TABLE transactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tx_hash VARCHAR(100) NOT NULL UNIQUE,
+    from_address VARCHAR(100) NOT NULL,
+    to_address VARCHAR(100) NOT NULL,
+    amount DECIMAL(36, 18) NOT NULL,
+    coin VARCHAR(10) NOT NULL,
+    time DATETIME NOT NULL,
+    network VARCHAR(50) DEFAULT 'BNB Smart Chain',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+

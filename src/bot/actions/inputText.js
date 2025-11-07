@@ -12,6 +12,8 @@ import { addOrder, completeOrder, getOrderById } from "../../utils/orderUtil.js"
 import { notifyAdmin, notifyUser } from "../sendMess.js";
 import { showOrders } from "./admin/showOrder.js";
 import { checkout } from "../../utils/payment.js";
+import { getTransactionByHash } from "../../utils/payment2.js";
+import { addTransaction } from "../../utils/depositUtil.js";
 
 
 const inputDeposit = async (ctx) => {
@@ -158,19 +160,17 @@ ${content}
 const inputTxId = async (ctx) => {
     const txid = ctx.message.text.trim();
     const time = ctx.session.time;
-    let amount = checkout(txid, time);
-    if (!amount || amount == 0.0) {
-        amount = checkout(txid, 'USDC');
-    }
-    if (!amount || amount == 0.0) {
+    const transaction = await getTransactionByHash(txid, time);
+    if (!transaction.status) {
         ctx.reply("Transaction not found, Please re-enter.");
         return;
     }
-
-    const user = getUserById(ctx.from.id);
+    const amount = parseFloat(transaction.amount);
+    const user = await getUserById(ctx.from.id);
     if (!user) {
         ctx.reply("error");
     }
+
     const newUser = await updateUser(user.id, { balance: parseFloat(user.balance) + parseFloat(amount) });
 
     await ctx.reply(
@@ -182,9 +182,10 @@ const inputTxId = async (ctx) => {
             ]),
         }
     );
-    const message = `📢 *New Deposit Received!*\n\n👤 User: @${user.username}\n💰 Amount: ${amount} $\n🧾 Transaction ID: ${id}\n⏱️ Time: ${new Date(transactionTime).toLocaleString("en-US")}`;
+    const message = `📢 *New Deposit Received!*\n\n👤 User: @${user.username}\n💰 Amount: ${amount} $`;
 
     await notifyAdmin(message);
+    await addTransaction(transaction);
     ctx.session.time = null
 
     ctx.session.step = null;

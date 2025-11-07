@@ -11,3 +11,4 @@ export const DB_DB = process.env.DB_DB;
 export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 export const NETWORK = process.env.NETWORK;
 export const ADDRESS_WALLET = process.env.ADDRESS_WALLET;
+export const RPC_URL = process.env.RPC_URL_BEP20

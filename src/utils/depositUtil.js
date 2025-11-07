@@ -1,0 +1,44 @@
+import { db } from "./database.js";
+
+const addTransaction = async (tx) => {
+    const {
+        tx_hash,
+        from_address,
+        to_address,
+        amount,
+        coin,
+        time,
+        network = "BNB Smart Chain",
+    } = tx;
+
+    try {
+        // Kiểm tra xem giao dịch đã tồn tại chưa (theo tx_hash)
+        const [rows] = await db.query(
+            "SELECT * FROM transactions WHERE tx_hash = ?",
+            [tx_hash]
+        );
+
+        if (rows.length > 0) {
+            console.log(`⚠️ Giao dịch ${tx_hash} đã tồn tại.`);
+            return rows[0];
+        }
+
+        // Nếu chưa có thì thêm mới
+        await db.query(
+            `INSERT INTO transactions 
+       (tx_hash, from_address, to_address, amount, coin, time, network) 
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [tx_hash, from_address, to_address, amount, coin, time, network]
+        );
+
+        console.log(`✅ Giao dịch ${tx_hash} đã được thêm vào database.`);
+        return tx;
+    } catch (error) {
+        console.error("❌ Lỗi trong addTransaction:", error);
+        throw error;
+    }
+};
+
+export {
+    addTransaction,
+}

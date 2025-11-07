@@ -60,7 +60,6 @@ const showMenu = async (ctx, u, edit = false, media = false) => {
 export default (bot) => {
     bot.start(async (ctx) => {
         const { id, is_bot, first_name, last_name, username = "no-username", language_code } = ctx.from;
-        console.log(ctx.from);
         const balance = 0;
         const is_block = false;
         const transaction = 0;

@@ -12,25 +12,24 @@ export default (bot) => {
         try {
             await ctx.answerCbQuery();
 
-            // Example: your Polygon wallet address
-            const walletAddress = "kdjbfgdkj";
-
             // Optional QR image (store it in your assets folder)
             const qrPath = path.join(process.cwd(), "assets/deposit_qr.jpg");
 
             const caption = `
-💰 *Crypto Deposit — Polygon Network*
+💰 Crypto Deposit — USDT BEP20 / USDT BNB CHAIN Network
 
-📢 *Important Notice:*
-Please **DO NOT send funds** before clicking the *✅ Request deposit* button below.
+📢 Important Notice:
+Please *DO NOT send funds* before clicking the ✅ Request deposit button below.
 
-🏦 *Deposit Address (${NETWORK}):*
-\`${ADDRESS_WALLET}\`
+🏦 Deposit Address (${NETWORK}):
+${ADDRESS_WALLET}
 
 You can scan the QR code above to send funds.
 
-Once you’ve made the transfer, please enter your *Transaction ID (TxID)* below so we can verify your deposit.
+Once you’ve made the transfer, please enter your *Transaction hash or Transaction ID* below so we can verify your deposit.
+Example: 0xdd37bc11ac4c97145c788648823d3326d1b74569363abd086dce84b0037242e7
 `;
+
 
             // Send QR + caption
             await ctx.editMessageMedia(
@@ -62,37 +61,9 @@ Once you’ve made the transfer, please enter your *Transaction ID (TxID)* below
         ctx.session.time = Date.now();
         ctx.session.step = "waiting_txid";
 
-        await ctx.reply("🔍 Please enter your *Transaction ID (TxID) ~ 12 numbers*:", {
+        await ctx.reply("🔍 Please enter your *Transaction hash or Transaction ID *:", {
             parse_mode: "Markdown",
         });
     });
 
-    // // Step 3: Handle user message (TxID input)
-    // bot.on("text", async (ctx) => {
-    //     ctx.session = ctx.session || {};
-    //     if (ctx.session.step === "waiting_txid") {
-    //         const txid = ctx.message.text.trim();
-
-    //         if (txid.length < 10) {
-    //             await ctx.reply("❌ Invalid Transaction ID. Please check and enter again.");
-    //             return;
-    //         }
-
-    //         // Simulate saving or verifying the transaction
-    //         // TODO: Add your database logic here
-    //         console.log(`💳 Received TxID from ${ctx.from.username}: ${txid}`);
-
-    //         await ctx.reply(
-    //             "✅ Thank you! Your transaction has been received.\nOur team will verify it shortly.",
-    //             {
-    //                 parse_mode: "Markdown",
-    //                 ...Markup.inlineKeyboard([
-    //                     [Markup.button.callback("↩️ Back to Home", "SHOW_HOME")],
-    //                 ]),
-    //             }
-    //         );
-
-    //         ctx.session.step = null;
-    //     }
-    // });
 };
