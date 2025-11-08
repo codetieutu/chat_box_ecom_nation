@@ -1,5 +1,16 @@
 import { Markup } from "telegraf";
-import { getUsersByPage } from "../../../utils/userUtil.js"; // 👈 bạn sẽ tạo hàm này bên dưới
+import { getUsersByPage } from "../../../utils/userUtil.js";
+
+// Hàm escape HTML an toàn
+function escapeHtml(text) {
+    if (!text) return '';
+    return text.toString()
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
 
 // === Hiển thị danh sách người dùng có phân trang ===
 const showUsers = async (ctx, page = 0) => {
@@ -7,14 +18,14 @@ const showUsers = async (ctx, page = 0) => {
         // Lấy dữ liệu người dùng (mỗi trang 10 user)
         const { users, totalPages, totalUsers } = await getUsersByPage(page);
 
-        let text = `👥 *USER LIST (Page ${page + 1}/${totalPages})*\n`;
-        text += `*Total users:* ${totalUsers}\n\n`;
+        let text = `<b>👥 USER LIST (Page ${page + 1}/${totalPages})</b>\n`;
+        text += `<b>Total users:</b> ${totalUsers}\n\n`;
 
         users.forEach((u, i) => {
-            text += `${i + 1}. @${u.username || "no username"}\n`;
+            const username = u.username ? escapeHtml(u.username) : "no username";
+            text += `<b>${i + 1}.</b> @${username}\n`;
             text += `╰ Balance: ${u.balance}$ | Transactions: ${u.transaction}\n\n`;
         });
-
 
         // === Nút điều hướng ===
         const buttonRows = [];
@@ -35,7 +46,7 @@ const showUsers = async (ctx, page = 0) => {
         // === Gửi / Cập nhật tin nhắn ===
         const message = ctx.callbackQuery?.message;
         const opts = {
-            parse_mode: "Markdown",
+            parse_mode: "HTML",
             reply_markup: { inline_keyboard: buttonRows },
         };
 
@@ -58,7 +69,7 @@ export default (bot) => {
         await showUsers(ctx, page);
     });
 
-    // Khi bấm nút “👥 Quản lý người dùng” trong menu admin
+    // Khi bấm nút "👥 Quản lý người dùng" trong menu admin
     bot.action("ADMIN_USERS", async (ctx) => {
         await ctx.answerCbQuery();
         await showUsers(ctx, 0);

@@ -1,6 +1,17 @@
 import { Markup } from "telegraf";
 import { getUserById } from "../../../utils/userUtil.js";
 
+// Hàm escape HTML an toàn
+function escapeHtml(text) {
+    if (!text) return '';
+    return text.toString()
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 export const showUserDetail = async (ctx, userId, edit = true) => {
     try {
         const user = await getUserById(userId);
@@ -9,35 +20,50 @@ export const showUserDetail = async (ctx, userId, edit = true) => {
             return;
         }
 
-        // 🧾 Tạo nội dung hiển thị
-        const text = `
-👤 *${user.first_name || ""} ${user.last_name || ""}*
-╰ Username: @${user.username || "no_username"}
+        // 🧾 Tạo nội dung hiển thị với HTML formatting
+        const fullName = `${escapeHtml(user.first_name || "")} ${escapeHtml(user.last_name || "")}`.trim();
+        const username = user.username ? `@${escapeHtml(user.username)}` : "no_username";
 
-💰 *Balance:* ${user.balance}$
-🛍️ *Transactions:* ${user.transaction}
-`;
+        const text = `
+👤 <b>${fullName}</b>
+╰ Username: ${username}
+
+💰 <b>Balance:</b> ${user.balance}$
+🛍️ <b>Transactions:</b> ${user.transaction}
+`.trim();
 
         // 🔘 Nút hành động
         const keyboard = Markup.inlineKeyboard([
             [Markup.button.callback("💰 Deposit", `DEPOSIT_USER_${user.id}`)],
             [Markup.button.callback("↩️ Back", "ADMIN_USERS")],
         ]);
+
+        const messageOptions = {
+            parse_mode: "HTML",
+            ...keyboard,
+        };
+
         if (!edit) {
-            await ctx.reply(text, { parse_mode: "Markdown", ...keyboard });
+            await ctx.reply(text, messageOptions);
             return;
         }
 
         // Nếu message là ảnh → update caption, nếu không → update text
         const isPhoto = ctx.callbackQuery?.message?.photo;
         if (isPhoto) {
-            await ctx.editMessageCaption(text, { parse_mode: "Markdown", ...keyboard });
+            await ctx.editMessageCaption(text, messageOptions);
         } else {
-            await ctx.editMessageText(text, { parse_mode: "Markdown", ...keyboard });
+            await ctx.editMessageText(text, messageOptions);
         }
 
     } catch (error) {
         console.error("⚠️ showUserDetail error:", error);
+        // Xử lý lỗi "message not modified"
+        if (error.response?.error_code === 400 &&
+            error.response.description.includes('message is not modified')) {
+            return;
+        }
+        await ctx.answerCbQuery("❌ Có lỗi xảy ra!");
     }
 };
 
@@ -48,6 +74,7 @@ export default (bot) => {
         const userId = ctx.match[1];
         await showUserDetail(ctx, userId);
     });
+
     bot.action(/^DEPOSIT_USER_(\d+)/, async (ctx) => {
         await ctx.answerCbQuery();
         const userId = ctx.match[1];
@@ -57,5 +84,4 @@ export default (bot) => {
 
         await ctx.reply("💵 Please enter the amount to deposit:");
     });
-
-}
+};
