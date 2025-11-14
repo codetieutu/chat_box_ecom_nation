@@ -46,7 +46,6 @@ const getProductById = async (id) => {
 
 // Cập nhật số lượng sản phẩm
 const updateProductQuantity = async (id, delta) => {
-    console.log("check delta", delta);
     await db.query("UPDATE products SET quantity = quantity + ? WHERE id = ?", [delta, id]);
 };
 

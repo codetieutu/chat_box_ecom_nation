@@ -6,18 +6,18 @@ const showProducts = async (ctx, page, command = { dir: "", back: "" }) => {
         const { products, total } = await getProductByPage(page);
         // ==== Tạo text hiển thị ====
         let text = `📋 *PRODUCT LIST (Page ${page + 1}/${total}):*\n\n`;
-        products.forEach((p, i) => {
-            if (p.type === "preorder")
-                text += `${i + 1}. ${p.name} — ${p.price.toLocaleString()}$ (${p.type})\n`;
-            else
-                text += `${i + 1}. ${p.name} — ${p.price.toLocaleString()}$ (stock: ${p.quantity})\n`;
-        });
+        // products.forEach((p, i) => {
+        //     if (p.type === "preorder")
+        //         text += `${i + 1}. ${p.name} — ${p.price.toLocaleString()}$ (${p.type})\n`;
+        //     else
+        //         text += `${i + 1}. ${p.name} — ${p.price.toLocaleString()}$ (stock: ${p.quantity})\n`;
+        // });
 
         // ==== Tạo nút chọn sản phẩm (5 cột / hàng) ====
         const buttonRows = [];
-        for (let i = 0; i < products.length; i += 5) {
-            const rowButtons = products.slice(i, i + 5).map((p, idx) =>
-                Markup.button.callback(`${i + idx + 1}`, `${command.dir}${p.id}`)
+        for (let i = 0; i < products.length; i += 2) {
+            const rowButtons = products.slice(i, i + 2).map((p, idx) =>
+                Markup.button.callback(`${products[i].name}`, `${command.dir}${p.id}`)
             );
             buttonRows.push(rowButtons);
         }

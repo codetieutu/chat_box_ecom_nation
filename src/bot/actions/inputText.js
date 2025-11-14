@@ -77,7 +77,7 @@ const inputQuantity = async (ctx) => {
 const inputContent = async (ctx) => {
     const content = ctx.message.text.trim()
     const quantity = ctx.session.quantity;
-    const product = ctx.session.selectedProduct;
+    const product = ctx.session.product;
     const user = await getUserById(ctx.from.id);
     const order = {
         userId: ctx.from.id,
