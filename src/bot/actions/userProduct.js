@@ -1,5 +1,6 @@
 import { Markup } from "telegraf";
 import { getProductById } from "../../utils/productUtil.js";
+import { getVariantsByProduct } from "../../utils/variantUtil.js";
 
 export default (bot) => {
     bot.action(/USER_PRODUCT_(\d+)/, async (ctx) => {
@@ -13,25 +14,70 @@ export default (bot) => {
                 return;
             }
 
-            // Format message text
-            let text = `🏷️ *${product.name}*\n`;
-            text += `💰 *Price:* ${product.price}$\n`;
-            text += `📦 *Type:* ${product.type}\n`;
+            // Lấy danh sách variants của product
+            const variants = await getVariantsByProduct(productId);
 
-            if (product.type === "available") {
-                text += `📦 *Stock:* ${product.quantity}\n`;
+            // Tính giá min - max từ variants
+            let priceText = "N/A";
+            if (variants.length > 0) {
+                const prices = variants
+                    .map(v => Number(v.price))
+                    .filter(p => !Number.isNaN(p));
+
+                if (prices.length > 0) {
+                    const minPrice = Math.min(...prices);
+                    const maxPrice = Math.max(...prices);
+
+                    if (minPrice === maxPrice) {
+                        priceText = `${minPrice.toLocaleString()}$`;
+                    } else {
+                        priceText = `${minPrice.toLocaleString()}$ - ${maxPrice.toLocaleString()}$`;
+                    }
+                }
             }
 
-            text += `📝 *Description:*\n${product.description || "_No description available._"}`;
+            // Format message text
+            let text = `🏷️ *${product.name}*\n`;
+            text += `💰 *Price:* ${priceText}\n`;
+            text += `📦 *Type:* ${product.type}\n`;
 
-            // Inline buttons
-            const keyboard = Markup.inlineKeyboard([
+            // if (product.type === "available") {
+            //     text += `📦 *Stock:* ${product.quantity}\n`;
+            // }
 
-                [Markup.button.callback("🛒 Buy", `BUY_PRODUCT_${product.id}`)],
-                [Markup.button.callback("↩️ Back", "SHOW_USER_PRODUCTS_0")],
-            ]);
+            text += `\n📝 *Description:*\n${product.description || "_No description available._"}`;
 
-            await ctx.editMessageCaption(text, { parse_mode: "Markdown", ...keyboard });
+            // Tạo các nút variant
+            const variantButtons = [];
+
+            variants.forEach(v => {
+                const label = `${v.variant_name} - ${Number(v.price).toLocaleString()}$`;
+                // callback này tuỳ bạn, mình đặt là USER_VARIANT_<id> để sau này handle chi tiết biến thể
+                variantButtons.push(
+                    Markup.button.callback(label, `USER_VARIANT_${v.id}`)
+                );
+            });
+
+            // Chia nút variant thành từng hàng 1–2 nút
+            const rows = [];
+            for (let i = 0; i < variantButtons.length; i += 2) {
+                rows.push(variantButtons.slice(i, i + 2));
+            }
+
+            // Thêm nút Back
+            rows.push([Markup.button.callback("↩️ Back", "SHOW_USER_PRODUCTS_0")]);
+
+            const keyboard = Markup.inlineKeyboard(rows);
+
+            // Nếu message gốc là text: dùng editMessageText
+            await ctx.editMessageCaption(text, {
+                parse_mode: "Markdown",
+                ...keyboard
+            });
+
+            // Nếu message gốc là photo+caption thì thay bằng editMessageCaption:
+            // await ctx.editMessageCaption(text, { parse_mode: "Markdown", ...keyboard });
+
         } catch (err) {
             console.error("⚠️ USER_PRODUCT error:", err);
             await ctx.reply("❌ Failed to load product details.");

@@ -1,0 +1,30 @@
+/* Sidebar Styles */
+.sidebar {
+    width: 260px;
+    z-index: 1000;
+}
+
+.main-content {
+    margin-left: 260px;
+}
+
+/* Custom table styles */
+.table> :not(caption)>*>* {
+    padding: 0.75rem 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 70px;
+    }
+
+    .sidebar-header span,
+    .nav-link span {
+        display: none;
+    }
+
+    .main-content {
+        margin-left: 70px;
+    }
+}

@@ -1,0 +1,75 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Product Management</h1>
+    <a href="/products/add" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add New Product
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th width="80">ID</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th width="150">Type</th>
+                        <th width="150" class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% products.forEach(product=> { %>
+                        <tr>
+                            <td>
+                                <strong>
+                                    <%= product.id %>
+                                </strong>
+                            </td>
+                            <td>
+                                <div class="fw-bold">
+                                    <%= product.name %>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="text-muted">
+                                    <%= product.description && product.description.length> 100 ?
+                                        product.description.substring(0, 100) + '...' :
+                                        product.description || 'No description' %>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info text-dark">
+                                    <%= product.type %>
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <!-- Edit Button -->
+                                    <a href="/products/edit/<%= product.id %>" class="btn btn-warning" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+
+                                    <!-- Edit Variants Button -->
+                                    <a href="/products/variants/<%= product.id %>" class="btn btn-info"
+                                        title="Edit Variants">
+                                        <i class="fas fa-list"></i>
+                                    </a>
+
+                                    <!-- Delete Button -->
+                                    <form action="/products/delete/<%= product.id %>" method="POST" class="d-inline">
+                                        <button type="submit" class="btn btn-danger"
+                                            onclick="return confirm('Are you sure you want to delete this product?')"
+                                            title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        <% }); %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

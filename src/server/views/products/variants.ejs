@@ -1,0 +1,203 @@
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Edit Variants</h1>
+            <a href="/products" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Products
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <!-- Product Info -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Product Information</h5>
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>ID:</strong>
+                        <%= product.id %>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Name:</strong>
+                        <%= product.name %>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Type:</strong> <span class="badge bg-info">
+                            <%= product.type %>
+                        </span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Description:</strong>
+                        <%= product.description || 'No description' %>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Warehouse Settings -->
+        <!-- <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Warehouse Management</h5>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="usePrivateWarehouse">
+                    <label class="form-check-label" for="usePrivateWarehouse">
+                        Use private warehouse (This setting requires you to have a private warehouse server and provide
+                        API for the marketplace)
+                    </label>
+                </div>
+                <div class="text-muted">
+                    <strong>Store:</strong> Sản phẩm ADOBE bản quyền full app - 100GB
+                </div>
+            </div>
+        </div> -->
+
+        <!-- Variants Table -->
+        <div class="card">
+            <div class="card-body">
+                <form action="/products/variants/<%= product.id %>" method="POST">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th width="300">Variant Name</th>
+                                    <th width="150">Price</th>
+                                    <th width="120">Status</th>
+                                    <th width="120">Stock</th>
+                                    <th width="150" class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% variants.forEach((variant, index)=> { %>
+                                    <tr>
+                                        <td>
+                                            <input type="text" class="form-control"
+                                                name="variants[<%= index %>][variant_name]"
+                                                value="<%= variant.variant_name %>" required>
+                                            <input type="hidden" name="variants[<%= index %>][id]"
+                                                value="<%= variant.id %>">
+                                        </td>
+                                        <td>
+                                            <input type="number" class="form-control"
+                                                name="variants[<%= index %>][price]" value="<%= variant.price %>"
+                                                required>
+                                        </td>
+                                        <td>
+                                            <select class="form-control" name="variants[<%= index %>][status]">
+                                                <option value="A" <%=variant.status==='A' ? 'selected' : '' %>>Active
+                                                </option>
+                                                <option value="I" <%=variant.status==='I' ? 'selected' : '' %>>Inactive
+                                                </option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <span class="badge <%= variant.stock > 0 ? 'bg-success' : 'bg-warning' %>">
+                                                <%= variant.quantity %>
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm">
+                                                <!-- Save Button -->
+                                                <button type="button" class="btn btn-success" title="Save">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+
+                                                <a href="/products/stock-upload/<%= product.id %>?variant=<%= variant.id %>"
+                                                    class="btn btn-info" title="Add Stock">
+                                                    <i class="fas fa-boxes"></i>
+                                                </a>
+                                                <!-- Delete Button -->
+                                                <a href="/products/delete/variant/<%=variant.id %>"
+                                                    class="btn btn-danger" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <% }); %>
+
+                                        <!-- Add New Variant Row -->
+                                        <tr>
+                                            <td>
+                                                <input type="text" class="form-control"
+                                                    name="new_variants[0][variant_name]" placeholder="New variant name">
+                                            </td>
+                                            <td>
+                                                <input type="number" class="form-control" name="new_variants[0][price]"
+                                                    placeholder="Price">
+                                            </td>
+                                            <td>
+                                                <select class="form-control" name="new_variants[0][status]">
+                                                    <option value="A">Active</option>
+                                                    <option value="I">Inactive</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary">0</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-primary btn-sm"
+                                                    onclick="addNewVariant()">
+                                                    <i class="fas fa-plus"></i> Add
+                                                </button>
+                                            </td>
+                                        </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save All Changes
+                        </button>
+                        <a href="/products" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let variantCount = 1;
+
+    function addNewVariant() {
+        variantCount++;
+        const newRow = `
+        <tr>
+            <td>
+                <input type="text" class="form-control" 
+                       name="new_variants[${variantCount}][variant_name]" 
+                       placeholder="New variant name">
+            </td>
+            <td>
+                <input type="number" class="form-control" 
+                       name="new_variants[${variantCount}][price]" 
+                       placeholder="Price">
+            </td>
+            <td>
+                <select class="form-control" name="new_variants[${variantCount}][status]">
+                    <option value="A">Active</option>
+                    <option value="I">Inactive</option>
+                </select>
+            </td>
+            <td>
+                <span class="badge bg-secondary">0</span>
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeVariant(this)">
+                    <i class="fas fa-times"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+
+        document.querySelector('tbody').insertAdjacentHTML('beforeend', newRow);
+    }
+
+    function removeVariant(button) {
+        button.closest('tr').remove();
+    }
+</script>

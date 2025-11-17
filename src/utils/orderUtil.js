@@ -1,79 +1,233 @@
+// orderUtil.js
 import { db } from "./database.js";
 
 /**
- * ➕ Thêm đơn hàng mới
+ * Lấy tất cả đơn hàng
+ * @returns {Promise<Array>}
  */
-export const addOrder = async (order = {}) => {
-    const {
-        userId,
-        productId,
-        productName,
+export async function getAllOrders() {
+    const [rows] = await db.execute(
+        `SELECT 
+        id,
+        user_id,
+        product_id,
+        variant_id,
         quantity,
+        unit_price,
+        total_amount,
+        status,
         note,
-        totalPrice
-    } = order
-    try {
-        const sql = `
-      INSERT INTO orders (user_id, product_id, product_name, quantity, note, total_price)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `;
-        const [result] = await db.query(sql, [userId, productId, productName, quantity, note, totalPrice]);
-
-        // Trả về đơn hàng vừa thêm
-        const [rows] = await db.query("SELECT * FROM orders WHERE id = ?", [result.insertId]);
-        return rows[0];
-    } catch (error) {
-        console.error("❌ Error adding order:", error);
-        throw error;
-    }
-};
+        receiver_name,
+        product_name,
+        created_at,
+        updated_at
+     FROM orders
+     ORDER BY created_at DESC`
+    );
+    return rows;
+}
 
 /**
- * 📄 Lấy danh sách đơn hàng theo trang (mặc định 10 đơn/trang)
+ * Lấy 1 đơn hàng theo id
+ * @param {number} id
+ * @returns {Promise<Object|null>}
  */
-export const getOrdersByPage = async (page = 0, limit = 10) => {
-    try {
-        const offset = page * limit;
-
-        const [rows] = await db.query(
-            "SELECT * FROM orders WHERE is_completed = false ORDER BY created_at DESC LIMIT ? OFFSET ?",
-            [limit, offset]
-        );
-
-        const [[{ total }]] = await db.query("SELECT COUNT(*) AS total FROM orders");
-
-        return { orders: rows, total };
-    } catch (error) {
-        console.error("❌ Error getting orders by page:", error);
-        throw error;
-    }
-};
+export async function getOrderById(id) {
+    const [rows] = await db.execute(
+        `SELECT 
+        id,
+        user_id,
+        product_id,
+        variant_id,
+        quantity,
+        unit_price,
+        total_amount,
+        status,
+        note,
+        receiver_name,
+        product_name,
+        created_at,
+        updated_at
+     FROM orders
+     WHERE id = ?`,
+        [id]
+    );
+    return rows.length ? rows[0] : null;
+}
 
 /**
- * 🔍 Lấy đơn hàng theo ID
+ * Lấy tất cả đơn hàng của 1 user
+ * @param {string} userId
+ * @returns {Promise<Array>}
  */
-export const getOrderById = async (orderId) => {
-    try {
-        const [rows] = await db.query("SELECT * FROM orders WHERE id = ?", [orderId]);
-        return rows[0] || null;
-    } catch (error) {
-        console.error("❌ Error getting order by ID:", error);
-        throw error;
-    }
-};
+export async function getOrdersByUserId(userId) {
+    const [rows] = await db.execute(
+        `SELECT 
+        id,
+        user_id,
+        product_id,
+        variant_id,
+        quantity,
+        unit_price,
+        total_amount,
+        status,
+        note,
+        receiver_name,
+        product_name,
+        created_at,
+        updated_at
+     FROM orders
+     WHERE user_id = ?
+     ORDER BY created_at DESC`,
+        [userId]
+    );
+    return rows;
+}
 
 /**
- * ✅ Đánh dấu hoàn thành đơn hàng
+ * Tạo đơn hàng mới
+ * @param {{
+ *  user_id?: string|null,
+ *  product_id: number,
+ *  variant_id?: number|null,
+ *  quantity?: number,
+ *  unit_price: number,
+ *  note?: string|null,
+ *  receiver_name?: string|null,
+ *  product_name?: string|null
+ * }} order
+ * @returns {Promise<number>} id của đơn hàng vừa tạo
  */
-export const completeOrder = async (orderId) => {
-    try {
-        const sql = "UPDATE orders SET is_completed = true WHERE id = ?";
-        await db.query(sql, [orderId]);
+export async function createOrder(order) {
+    const {
+        user_id = null,
+        product_id,
+        variant_id = null,
+        quantity = 1,
+        unit_price,
+        note = null,
+        receiver_name = null,
+        product_name = null,
+    } = order;
 
-        const [rows] = await db.query("SELECT * FROM orders WHERE id = ?", [orderId]);
-        return rows[0] || null;
-    } catch (error) {
-        console.error("❌ Error completing order:", error);
-        throw error;
+    const total_amount = quantity * unit_price;
+
+    const [result] = await db.execute(
+        `INSERT INTO orders (
+        user_id,
+        product_id,
+        variant_id,
+        quantity,
+        unit_price,
+        total_amount,
+        status,
+        note,
+        receiver_name,
+        product_name
+     ) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`,
+        [
+            user_id,
+            product_id,
+            variant_id,
+            quantity,
+            unit_price,
+            total_amount,
+            note,
+            receiver_name,
+            product_name,
+        ]
+    );
+
+    return result.insertId;
+}
+
+/**
+ * Cập nhật đơn hàng (update từng trường)
+ *
+ * data có thể chứa bất kỳ field nào trong số:
+ * user_id, product_id, variant_id, quantity, unit_price,
+ * total_amount, status, note, receiver_name, product_name
+ *
+ * Nếu quantity hoặc unit_price thay đổi mà bạn KHÔNG truyền total_amount,
+ * hàm sẽ tự tính lại total_amount = quantity * unit_price.
+ *
+ * @param {number} id
+ * @param {Object} data
+ * @returns {Promise<boolean>} true nếu update thành công
+ */
+export async function updateOrder(id, data) {
+    // Nếu có thay đổi quantity hoặc unit_price → tự tính lại total_amount nếu chưa truyền
+    if (
+        ("quantity" in data || "unit_price" in data) &&
+        !("total_amount" in data)
+    ) {
+        const existing = await getOrderById(id);
+        if (!existing) {
+            throw new Error("Order not found");
+        }
+
+        const quantity = data.quantity ?? existing.quantity;
+        const unit_price = data.unit_price ?? existing.unit_price;
+
+        data.total_amount = quantity * unit_price;
     }
-};
+
+    const allowedFields = [
+        "user_id",
+        "product_id",
+        "variant_id",
+        "quantity",
+        "unit_price",
+        "total_amount",
+        "status",
+        "note",
+        "receiver_name",
+        "product_name",
+        "seller_note"
+    ];
+
+    const fields = [];
+    const values = [];
+
+    for (const key of Object.keys(data)) {
+        if (allowedFields.includes(key)) {
+            fields.push(`${key} = ?`);
+            values.push(data[key]);
+        }
+    }
+
+    if (fields.length === 0) {
+        throw new Error("No valid fields to update");
+    }
+
+    values.push(id);
+
+    const sql = `UPDATE orders SET ${fields.join(", ")} WHERE id = ?`;
+
+    const [result] = await db.execute(sql, values);
+    return result.affectedRows > 0;
+}
+
+/**
+ * Cập nhật trạng thái đơn hàng
+ * @param {number} id
+ * @param {'pending'|'success'|'failed'} status
+ * @returns {Promise<boolean>}
+ */
+export async function updateOrderStatus(id, status) {
+    const [result] = await db.execute(
+        "UPDATE orders SET status = ? WHERE id = ?",
+        [status, id]
+    );
+    return result.affectedRows > 0;
+}
+
+/**
+ * Xoá đơn hàng
+ * @param {number} id
+ * @returns {Promise<boolean>}
+ */
+export async function deleteOrder(id) {
+    const [result] = await db.execute("DELETE FROM orders WHERE id = ?", [id]);
+    return result.affectedRows > 0;
+}

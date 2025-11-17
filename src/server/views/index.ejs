@@ -1,0 +1,134 @@
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Dashboard</h1>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Statistics Cards -->
+    <div class="col-md-3 mb-4">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">150</h4>
+                        <p class="card-text">Total Products</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-box fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-4">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">89</h4>
+                        <p class="card-text">Total Users</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-4">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">45</h4>
+                        <p class="card-text">Pending Orders</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-shopping-cart fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-4">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">$12,500</h4>
+                        <p class="card-text">Total Revenue</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-dollar-sign fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Recent Orders</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#001</td>
+                                <td>Nguyen Van A</td>
+                                <td>$150.00</td>
+                                <td><span class="badge bg-success">Completed</span></td>
+                                <td>2024-01-15</td>
+                            </tr>
+                            <tr>
+                                <td>#002</td>
+                                <td>Tran Thi B</td>
+                                <td>$220.00</td>
+                                <td><span class="badge bg-warning">Pending</span></td>
+                                <td>2024-01-16</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="/products/add" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add New Product
+                    </a>
+                    <a href="/users/add" class="btn btn-success">
+                        <i class="fas fa-user-plus"></i> Add New User
+                    </a>
+                    <a href="/orders/add" class="btn btn-info">
+                        <i class="fas fa-cart-plus"></i> Create Order
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -2,7 +2,6 @@ import fs from "fs/promises";
 import path from "path";
 import { addStock } from "../../utils/stockUtil.js";
 import { showAdminProduct } from "./admin/detailProduct.js";
-import { updateProductQuantity } from "../../utils/productUtil.js";
 
 export default (bot) => {
     bot.on("document", async (ctx) => {

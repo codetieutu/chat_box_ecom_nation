@@ -17,7 +17,7 @@ const showProducts = async (ctx, page, command = { dir: "", back: "" }) => {
         const buttonRows = [];
         for (let i = 0; i < products.length; i += 2) {
             const rowButtons = products.slice(i, i + 2).map((p, idx) =>
-                Markup.button.callback(`${products[i].name}`, `${command.dir}${p.id}`)
+                Markup.button.callback(`${p.name}`, `${command.dir}${p.id}`)
             );
             buttonRows.push(rowButtons);
         }

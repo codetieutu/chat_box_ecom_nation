@@ -1,0 +1,72 @@
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Edit Product</h1>
+            <a href="/products" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form action="/products/edit/<%= product.id %>" method="POST">
+                    <!-- Product ID (readonly) -->
+                    <div class="mb-3">
+                        <label for="id" class="form-label">Product ID</label>
+                        <input type="text" class="form-control" id="id" value="<%= product.id %>" readonly disabled>
+                        <div class="form-text">Product ID cannot be changed</div>
+                    </div>
+
+                    <!-- Product Name -->
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Product Name</label>
+                        <input type="text" class="form-control" id="name" name="name" value="<%= product.name %>"
+                            required>
+                    </div>
+
+                    <!-- Product Type -->
+                    <div class="mb-3">
+                        <label for="type" class="form-label">Product Type</label>
+                        <input type="text" class="form-control" id="type" value="<%= product.type %>" readonly disabled>
+                        <div class="form-text">Product type cannot be changed</div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="5"
+                            placeholder="Enter detailed product description"><%= product.description || '' %></textarea>
+                        <div class="form-text">
+                            Describe the product features, specifications, and benefits.
+                        </div>
+                    </div>
+
+                    <!-- Current Stock (readonly for information) -->
+                    <div class="mb-3">
+                        <label class="form-label">Current Stock</label>
+                        <div class="alert alert-info">
+                            <i class="fas fa-boxes me-2"></i>
+                            Current stock: <strong>
+                                <%= product.stock %> units
+                            </strong>
+                            <br>
+                            <small>To update stock quantity, please use the "Add Stock" feature from the product
+                                list.</small>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Update Product
+                        </button>
+                        <a href="/products" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

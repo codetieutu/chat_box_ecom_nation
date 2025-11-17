@@ -1,10 +1,10 @@
 import { Markup } from "telegraf";
-import { getOrdersByPage } from "../../../utils/orderUtil.js";
+// import { getOrdersByPage } from "../../../utils/orderUtil.js";
 
 const showOrders = async (ctx, page = 0, edit = true) => {
     try {
         const limit = 10;
-        const { orders, total } = await getOrdersByPage(page, limit);
+        // const { orders, total } = await getOrdersByPage(page, limit);
         const totalPages = Math.ceil(total / limit);
 
         if (!orders.length) {

@@ -1,5 +1,5 @@
 import { Markup } from "telegraf";
-import { completeOrder, getOrderById } from "../../../utils/orderUtil.js";
+import { getOrderById } from "../../../utils/orderUtil.js";
 import { getUserById, updateUser } from "../../../utils/userUtil.js";
 import { notifyUser } from "../../sendMess.js";
 
@@ -91,7 +91,7 @@ export default (bot) => {
             const orderId = ctx.match[1];
             const order = await getOrderById(orderId);
             const user = await getUserById(order.user_id);
-            await completeOrder(orderId);
+            // await completeOrder(orderId);
             await updateUser(order.user_id, { balance: parseFloat(user.balance) + parseFloat(order.total_price), transaction: parseInt(user.transaction) - parseInt(order.quantity) });
             const message = `
 ❌ *Your Order Has Been Cancelled!*

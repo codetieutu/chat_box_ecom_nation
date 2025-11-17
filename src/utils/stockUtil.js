@@ -1,5 +1,5 @@
 import { db } from "./database.js";
-import { updateProductQuantity } from "./productUtil.js";
+// import { updateProductQuantity } from "./productUtil.js";
 
 // Thêm item mới vào stock
 const addStock = async (productId, info) => {
@@ -9,7 +9,7 @@ const addStock = async (productId, info) => {
     );
 
     // Tăng số lượng trong bảng products
-    await db.query("UPDATE products SET quantity = quantity + 1 WHERE id = ?", [productId]);
+    await db.query("UPDATE product_variants SET quantity = quantity + 1 WHERE id = ?", [productId]);
 
     return { id: result.insertId, productId, info };
 };
@@ -30,27 +30,32 @@ const deleteStock = async (stockId) => {
     await db.query("DELETE FROM stocks WHERE id = ?", [stockId]);
 };
 
-export const getProductByQuantity = async (productId, quantity) => {
+export const getProductByQuantity = async (variantId, quantity) => {
     try {
-        // 1️⃣ Get unsold stock items for this product
-        const [rows] = await db.query(
-            "SELECT * FROM stocks WHERE product_id = ? AND is_sold = false LIMIT ?",
-            [productId, quantity]
-        );
 
-        // 2️⃣ Mark these stock items as sold (optional — depends on your flow)
-        const stockIds = rows.map((r) => r.id);
-        if (stockIds.length > 0) {
-            await db.query(
-                `UPDATE stocks SET is_sold = true WHERE id IN (${stockIds.map(() => "?").join(",")})`,
-                stockIds
-            );
+        const [rows] = await db.query(
+            "SELECT id, info FROM stocks WHERE product_id = ? AND is_sold = false LIMIT ?",
+            [variantId, quantity]
+        );
+        const selectedCount = rows.length;
+        if (selectedCount === 0) {
+            return [];
         }
 
-        // 3️⃣ Update the product quantity in main table
-        await updateProductQuantity(productId, -quantity);
+        const stockIds = rows.map(r => r.id);
 
-        return rows; // return selected stock items if needed
+        await db.query(
+            "UPDATE product_variants SET quantity = GREATEST(quantity - ?, 0) WHERE id = ?",
+            [selectedCount, variantId]
+        );
+
+        const placeholders = stockIds.map(() => "?").join(",");
+        await db.query(
+            `UPDATE stocks SET is_sold = true WHERE id IN (${placeholders})`,
+            stockIds
+        );
+
+        return rows;
     } catch (error) {
         console.error("⚠️ getProductByQuantity error:", error);
         throw error;

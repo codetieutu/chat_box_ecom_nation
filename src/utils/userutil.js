@@ -4,7 +4,16 @@ import { db } from "./database.js";
 const getUserAll = async () => {
     try {
         const [rows] = await db.query("SELECT * FROM users");
-        return rows;
+        if (rows.length > 0) {
+            const results = rows.map(row => {
+                return {
+                    ...row,
+                    fullName: `${row.first_name || ''} ${row.last_name || ''}`.trim()
+                }
+            })
+            return results;
+        }
+        return [];
     } catch (error) {
         console.error("❌ Lỗi khi lấy danh sách user:", error);
         throw error;
@@ -32,7 +41,12 @@ const getUsersByPage = async (page = 0, limmit = 10) => {
 const getUserById = async (id) => {
     try {
         const [rows] = await db.query("SELECT * FROM users WHERE id = ?", [id]);
-        return rows.length > 0 ? rows[0] : null;
+        if (rows.length > 0) {
+            return {
+                ...rows[0],
+                fullName: `${rows[0].first_name || ''} ${rows[0].last_name || ''}`.trim()
+            }
+        }
     } catch (error) {
         console.error("❌ Lỗi khi lấy user theo ID:", error);
         throw error;

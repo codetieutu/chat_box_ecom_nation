@@ -3,12 +3,12 @@ import { showUserDetail } from "./admin/UserAction.js";
 import { ADMIN_PASSWORD } from "../../utils/env.js";
 import { adminMenu } from "../commands/admin.js";
 import { Markup } from "telegraf";
-import { addProduct, updateProduct } from "../../utils/productUtil.js";
+import { updateProduct } from "../../utils/productUtil.js";
 import { showAdminProduct } from "./admin/detailProduct.js";
 import { getProductByQuantity } from "../../utils/stockUtil.js";
 import { exportProductsToTxt } from "../export.js";
 import { showMenu } from "../commands/start.js";
-import { addOrder, completeOrder, getOrderById } from "../../utils/orderUtil.js";
+import { getOrderById } from "../../utils/orderUtil.js";
 import { notifyAdmin, notifyUser } from "../sendMess.js";
 import { showOrders } from "./admin/showOrder.js";
 import { checkout } from "../../utils/payment.js";
@@ -88,7 +88,6 @@ const inputContent = async (ctx) => {
         totalPrice: parseFloat(quantity) * parseFloat(product.price)
     }
     try {
-        await addOrder(order);
         await notifyAdmin(`new order ${product.name}:${quantity}`)
         const userNew = await updateUser(ctx.from.id, { balance: parseFloat(user.balance) - quantity * parseFloat(product.price), transaction: parseInt(user.transaction) + quantity });
         await ctx.reply("Your order is being processed. Please wait.");
@@ -129,7 +128,6 @@ const inputCompletedMess = async (ctx) => {
         }
 
         // Cập nhật trạng thái đơn hàng → completed
-        await completeOrder(orderId);
 
         // 📩 Gửi thông báo đến người mua
         const message = `
@@ -301,7 +299,6 @@ export default (bot) => {
 
                 const p = ctx.session.newProduct;
                 try {
-                    await addProduct(p);
                     await ctx.reply(
                         `✅ Product added successfully:\n\n🏷️ *${p.name}*\n💰 ${p.price}$\n📦 ${p.type}\n📝 ${p.description}`,
                         { parse_mode: "Markdown" }
