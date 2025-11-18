@@ -28,7 +28,7 @@ export async function getVariantById(id) {
  */
 export async function createVariant(variant) {
     const { product_id, variant_name, quantity = 0, price = 0 } = variant;
-
+    console.log(">>check variant", variant);
     const [res] = await db.execute(
         "INSERT INTO product_variants (product_id, variant_name, quantity, price) VALUES (?, ?, ?, ?)",
         [product_id, variant_name, quantity, price]

@@ -1,6 +1,6 @@
 import express from 'express';
 import { createProduct, deleteProduct, getAllProducts, getProductById, updateProduct } from '../../utils/productUtil.js';
-import { createVariant, deleteVariant, getVariantById, getVariantsByProduct } from '../../utils/variantUtil.js';
+import { createVariant, deleteVariant, getVariantById, getVariantsByProduct, updateVariant } from '../../utils/variantUtil.js';
 import { addStock } from '../../utils/stockUtil.js';
 const router = express.Router();
 
@@ -108,20 +108,39 @@ router.get('/variants/:id', async (req, res) => {
 });
 
 // Update variants
-router.post('/variants/:id', async (req, res) => {
-    const productId = parseInt(req.params.id);
-    const { new_variants } = req.body;
+router.post('/variants/:id', async (req, res, next) => {
+    const productId = parseInt(req.params.id, 10);
+    const { variants = [], new_variants = [] } = req.body;
+
+    console.log(">>check body", req.body);
+
+    // check new variant rỗng
+    if (new_variants.length > 0 && new_variants[0].variant_name != '') {
+        console.log("createVariant activate");
+        try {
+            for (const variant of new_variants) {
+                // variant.product_id = productId; 
+                await createVariant(variant);
+                res.redirect('/products');
+            }
+        }
+        catch (error) {
+            console.log(error);
+            throw error;
+        }
+    }
+
     try {
-        for (const variant of new_variants) {
-            variant.product_id = productId;
-            await createVariant(variant);
+        for (const variant of variants) {
+            await updateVariant(variant.id, { name: variant.name, price: variant.price });
             res.redirect('/products');
         }
-    } catch (error) {
+    }
+    catch (error) {
+        console.log(error);
         throw error;
     }
 
-    //
 });
 
 // Add stock with file upload form

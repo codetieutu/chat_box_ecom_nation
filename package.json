@@ -7,7 +7,7 @@
     "test": "nodemon test/index.js",
     "dev": "nodemon src/server/server.js",
     "dev2": "nodemon src/index.js",
-    "start": "node src/main.js"
+    "start": "nodemon src/main.js"
   },
   "author": "code tieu tu",
   "license": "ISC",
