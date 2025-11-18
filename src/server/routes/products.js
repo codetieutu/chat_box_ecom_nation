@@ -1,7 +1,7 @@
 import express from 'express';
 import { createProduct, deleteProduct, getAllProducts, getProductById, updateProduct } from '../../utils/productUtil.js';
 import { createVariant, deleteVariant, getVariantById, getVariantsByProduct, updateVariant } from '../../utils/variantUtil.js';
-import { addStock } from '../../utils/stockUtil.js';
+import { addStock, getStocksByProduct } from '../../utils/stockUtil.js';
 import { notifyAllUsers } from '../../bot/sendMess.js'
 const router = express.Router();
 
@@ -106,6 +106,16 @@ router.get('/variants/:id', async (req, res) => {
         variants: variants,
         pageCss: 'products.css'
     });
+});
+
+router.get('/variants/:id/stock', async (req, res) => {
+    console.log("activate");
+    const variantId = req.params.id;
+
+    // Mock variants data - bạn có thể lấy từ database
+    const stocks = await getStocksByProduct(variantId);
+
+    res.status(200).json(stocks)
 });
 
 // Update variants

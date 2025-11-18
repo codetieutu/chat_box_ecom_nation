@@ -131,177 +131,312 @@
                                     </span>
                                 </div>
                             </div>
-                            <!-- <div class="mt-2">
-                                <a href="/products/stock-upload/<%= product.id %>"
-                                    class="btn btn-sm btn-outline-secondary">
-                                    <i class="fas fa-times me-1"></i>Clear selection
-                                </a>
-                            </div> -->
+                            <!-- View Stock Button -->
+                            <div class="mt-3">
+                                <button type="button" class="btn btn-info" id="viewStockBtn" onclick="loadStockData()">
+                                    <i class="fas fa-eye me-2"></i>View Stock Details
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <% } else if (product.variants && product.variants.length> 0) { %>
-                        <!-- Variant Selection -->
-                        <div class="card mb-4">
-                            <div class="card-body">
-                                <h5 class="card-title">
-                                    <i class="fas fa-tag me-2"></i>Select Variant
+
+                    <!-- Stock Details Section -->
+                    <div class="card mb-4" id="stockDetailsSection" style="display: none;">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-boxes me-2"></i>Stock Details
                                 </h5>
-                                <div class="mb-3">
-                                    <label for="variantSelect" class="form-label fw-bold">Choose variant to add
-                                        stock</label>
-                                    <select class="form-control" id="variantSelect" name="variant_id">
-                                        <option value="">Select a variant</option>
-                                        <% product.variants.forEach(variantItem=> { %>
-                                            <option value="<%= variantItem.id %>" data-stock="<%= variantItem.stock %>"
-                                                data-name="<%= variantItem.name %>"
-                                                <%=selectedVariantId===variantItem.id ? 'selected' : '' %>>
-                                                <%= variantItem.name %> - <%= variantItem.price.toLocaleString() %> $
-                                                        (Current: <%= variantItem.stock %>)
-                                            </option>
-                                            <% }); %>
-                                    </select>
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    onclick="refreshStockData()">
+                                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                                </button>
+                            </div>
+
+                            <!-- Stock Statistics -->
+                            <div class="row mb-4">
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center">
+                                            <h4 id="totalStockCount" class="text-primary mb-1">0</h4>
+                                            <small class="text-muted">Total Items</small>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div id="selectedVariantInfo" class="alert alert-info" style="display: none;">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    <strong>Selected:</strong> <span id="selectedVariantName"></span> |
-                                    <strong>Current Stock:</strong> <span id="selectedVariantStock"
-                                        class="badge bg-success"></span>
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center">
+                                            <h4 id="availableStockCount" class="text-success mb-1">0</h4>
+                                            <small class="text-muted">Available</small>
+                                        </div>
+                                    </div>
                                 </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center">
+                                            <h4 id="soldStockCount" class="text-danger mb-1">0</h4>
+                                            <small class="text-muted">Sold</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center">
+                                            <h4 id="lastUpdated" class="text-info mb-1">-</h4>
+                                            <small class="text-muted">Last Updated</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Stock Table -->
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover" id="stockTable">
+                                    <thead>
+                                        <tr>
+                                            <th width="50">#</th>
+                                            <th width="120">Status</th>
+                                            <th>Info</th>
+                                            <th width="150">Created At</th>
+                                            <th width="150">Updated At</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="stockTableBody">
+                                        <!-- Stock data will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Loading State -->
+                            <div id="stockLoading" class="text-center py-4" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Loading stock data...</p>
+                            </div>
+
+                            <!-- Empty State -->
+                            <div id="stockEmpty" class="text-center py-4" style="display: none;">
+                                <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                                <h5>No stock items found</h5>
+                                <p class="text-muted">This variant doesn't have any stock items yet.</p>
                             </div>
                         </div>
-                        <% } %>
+                    </div>
+                    <% } %>
 
-                            <!-- Upload Area -->
-                            <div class="card">
-                                <div class="card-body">
-                                    <form action="/products/stock-upload/<%= variant.id %>" method="POST"
-                                        id="uploadForm">
-                                        <% if ((product.variants && product.variants.length> 0) && !variant) { %>
-                                            <input type="hidden" id="selectedVariantId" name="variant_id" value="">
-                                            <% } %>
-                                                <% if (variant) { %>
-                                                    <input type="hidden" name="variant_id" value="<%= variant.id %>">
-                                                    <% } %>
+                        <!-- Rest of your existing code for Upload Area -->
+                        <!-- Upload Area -->
+                        <div class="card">
+                            <div class="card-body">
+                                <form action="/products/stock-upload/<%= variant.id %>" method="POST" id="uploadForm">
+                                    <% if ((product.variants && product.variants.length> 0) && !variant) { %>
+                                        <input type="hidden" id="selectedVariantId" name="variant_id" value="">
+                                        <% } %>
+                                            <% if (variant) { %>
+                                                <input type="hidden" name="variant_id" value="<%= variant.id %>">
+                                                <% } %>
 
-                                                        <!-- File Upload Section -->
-                                                        <div class="mb-4">
-                                                            <label class="form-label fw-bold">
-                                                                <i class="fas fa-file-upload me-2"></i>Upload TXT File
-                                                            </label>
-                                                            <div class="file-upload-area border rounded p-4 text-center"
-                                                                id="fileUploadArea"
-                                                                style="background-color: #f8f9fa; border-style: dashed !important;">
-                                                                <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
-                                                                <h5>Drop your TXT file here or click to browse</h5>
-                                                                <p class="text-muted mb-3">Supports .txt files with one
-                                                                    item per line</p>
-                                                                <input type="file" id="fileInput" accept=".txt"
-                                                                    class="d-none">
-                                                                <button type="button" class="btn btn-primary"
-                                                                    onclick="document.getElementById('fileInput').click()">
-                                                                    <i class="fas fa-folder-open me-2"></i>Choose File
-                                                                </button>
-                                                                <div id="fileInfo" class="mt-3" style="display: none;">
-                                                                    <span id="fileName" class="fw-bold"></span>
-                                                                    <span id="fileSize" class="text-muted ms-2"></span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <!-- Text Area for Data -->
-                                                        <div class="mb-4">
-                                                            <label for="stockData" class="form-label fw-bold">
-                                                                <i class="fas fa-edit me-2"></i>Stock Data
-                                                            </label>
-                                                            <textarea class="form-control" id="stockData"
-                                                                name="stockData" rows="12"
-                                                                placeholder="Enter stock data here (one item per line)&#10;Or upload a TXT file to automatically populate this area"
-                                                                style="font-family: 'Courier New', monospace; font-size: 14px;"></textarea>
-                                                            <div class="form-text">
-                                                                <i class="fas fa-info-circle me-1"></i>
-                                                                Enter one item per line. Each line will be counted as
-                                                                one stock unit.
-                                                            </div>
-                                                        </div>
-
-                                                        <!-- Preview Section -->
-                                                        <div class="mb-4" id="previewSection" style="display: none;">
-                                                            <label class="form-label fw-bold">
-                                                                <i class="fas fa-eye me-2"></i>Preview
-                                                            </label>
-                                                            <div class="card">
-                                                                <div class="card-body">
-                                                                    <div id="previewContent"></div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <!-- Statistics -->
-                                                        <div class="row mb-4">
-                                                            <div class="col-md-3">
-                                                                <div class="card bg-light">
-                                                                    <div class="card-body text-center">
-                                                                        <h4 id="lineCount" class="text-primary mb-1">0
-                                                                        </h4>
-                                                                        <small class="text-muted">Total Lines</small>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-3">
-                                                                <div class="card bg-light">
-                                                                    <div class="card-body text-center">
-                                                                        <h4 id="validCount" class="text-success mb-1">0
-                                                                        </h4>
-                                                                        <small class="text-muted">Valid Items</small>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-3">
-                                                                <div class="card bg-light">
-                                                                    <div class="card-body text-center">
-                                                                        <h4 id="newStock" class="text-info mb-1">
-                                                                            <% if (variant) { %>
-                                                                                <%= variant.stock %>
-                                                                                    <% } else { %>
-                                                                                        <%= product.stock %>
-                                                                                            <% } %>
-                                                                        </h4>
-                                                                        <small class="text-muted">New Total
-                                                                            Stock</small>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-3">
-                                                                <div class="card bg-light">
-                                                                    <div class="card-body text-center">
-                                                                        <h4 id="addedCount" class="text-warning mb-1">0
-                                                                        </h4>
-                                                                        <small class="text-muted">Items to Add</small>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <!-- Action Buttons -->
-                                                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                                            <button type="button"
-                                                                class="btn btn-outline-secondary me-md-2"
-                                                                onclick="clearData()">
-                                                                <i class="fas fa-eraser me-2"></i>Clear Data
+                                                    <!-- File Upload Section -->
+                                                    <div class="mb-4">
+                                                        <label class="form-label fw-bold">
+                                                            <i class="fas fa-file-upload me-2"></i>Upload TXT File
+                                                        </label>
+                                                        <div class="file-upload-area border rounded p-4 text-center"
+                                                            id="fileUploadArea"
+                                                            style="background-color: #f8f9fa; border-style: dashed !important;">
+                                                            <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                                                            <h5>Drop your TXT file here or click to browse</h5>
+                                                            <p class="text-muted mb-3">Supports .txt files with one
+                                                                item per line</p>
+                                                            <input type="file" id="fileInput" accept=".txt"
+                                                                class="d-none">
+                                                            <button type="button" class="btn btn-primary"
+                                                                onclick="document.getElementById('fileInput').click()">
+                                                                <i class="fas fa-folder-open me-2"></i>Choose File
                                                             </button>
-                                                            <button type="submit" class="btn btn-success"
-                                                                id="submitBtn">
-                                                                <i class="fas fa-save me-2"></i>Add to Stock
-                                                            </button>
+                                                            <div id="fileInfo" class="mt-3" style="display: none;">
+                                                                <span id="fileName" class="fw-bold"></span>
+                                                                <span id="fileSize" class="text-muted ms-2"></span>
+                                                            </div>
                                                         </div>
-                                    </form>
-                                </div>
+                                                    </div>
+
+                                                    <!-- Text Area for Data -->
+                                                    <div class="mb-4">
+                                                        <label for="stockData" class="form-label fw-bold">
+                                                            <i class="fas fa-edit me-2"></i>Stock Data
+                                                        </label>
+                                                        <textarea class="form-control" id="stockData" name="stockData"
+                                                            rows="12"
+                                                            placeholder="Enter stock data here (one item per line)&#10;Or upload a TXT file to automatically populate this area"
+                                                            style="font-family: 'Courier New', monospace; font-size: 14px;"></textarea>
+                                                        <div class="form-text">
+                                                            <i class="fas fa-info-circle me-1"></i>
+                                                            Enter one item per line. Each line will be counted as
+                                                            one stock unit.
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Preview Section -->
+                                                    <div class="mb-4" id="previewSection" style="display: none;">
+                                                        <label class="form-label fw-bold">
+                                                            <i class="fas fa-eye me-2"></i>Preview
+                                                        </label>
+                                                        <div class="card">
+                                                            <div class="card-body">
+                                                                <div id="previewContent"></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Statistics -->
+                                                    <div class="row mb-4">
+                                                        <div class="col-md-3">
+                                                            <div class="card bg-light">
+                                                                <div class="card-body text-center">
+                                                                    <h4 id="lineCount" class="text-primary mb-1">0
+                                                                    </h4>
+                                                                    <small class="text-muted">Total Lines</small>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <div class="card bg-light">
+                                                                <div class="card-body text-center">
+                                                                    <h4 id="validCount" class="text-success mb-1">0
+                                                                    </h4>
+                                                                    <small class="text-muted">Valid Items</small>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <div class="card bg-light">
+                                                                <div class="card-body text-center">
+                                                                    <h4 id="newStock" class="text-info mb-1">
+                                                                        <% if (variant) { %>
+                                                                            <%= variant.stock %>
+                                                                                <% } else { %>
+                                                                                    <%= product.stock %>
+                                                                                        <% } %>
+                                                                    </h4>
+                                                                    <small class="text-muted">New Total
+                                                                        Stock</small>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <div class="card bg-light">
+                                                                <div class="card-body text-center">
+                                                                    <h4 id="addedCount" class="text-warning mb-1">0
+                                                                    </h4>
+                                                                    <small class="text-muted">Items to Add</small>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Action Buttons -->
+                                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                                        <button type="button" class="btn btn-outline-secondary me-md-2"
+                                                            onclick="clearData()">
+                                                            <i class="fas fa-eraser me-2"></i>Clear Data
+                                                        </button>
+                                                        <button type="submit" class="btn btn-success" id="submitBtn">
+                                                            <i class="fas fa-save me-2"></i>Add to Stock
+                                                        </button>
+                                                    </div>
+                                </form>
                             </div>
+                        </div>
     </div>
 </div>
 
 <script>
-    // File upload functionality
+    // Stock Management Functions
+    async function loadStockData() {
+        const variantId = <%= variant.id %>;
+        const stockDetailsSection = document.getElementById('stockDetailsSection');
+        const stockLoading = document.getElementById('stockLoading');
+        const stockEmpty = document.getElementById('stockEmpty');
+        const stockTableBody = document.getElementById('stockTableBody');
+
+        // Show loading state
+        stockDetailsSection.style.display = 'block';
+        stockLoading.style.display = 'block';
+        stockEmpty.style.display = 'none';
+        stockTableBody.innerHTML = '';
+
+        try {
+            const response = await fetch(`/products/variants/${variantId}/stock`);
+            const stockData = await response.json();
+
+            // Hide loading
+            stockLoading.style.display = 'none';
+
+            if (stockData.length === 0) {
+                stockEmpty.style.display = 'block';
+                return;
+            }
+
+            // Update statistics
+            updateStockStatistics(stockData);
+
+            // Populate table
+            stockTableBody.innerHTML = stockData.map((item, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>
+                        <span class="badge ${item.is_sold ? 'bg-danger' : 'bg-success'}">
+                            ${item.is_sold ? 'Sold' : 'Available'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="stock-info-content">
+                            ${item.info || '<span class="text-muted">No info</span>'}
+                        </div>
+                    </td>
+                    <td>${formatDate(item.created_at)}</td>
+                    <td>${formatDate(item.updated_at)}</td>
+                </tr>
+            `).join('');
+
+        } catch (error) {
+            console.error('Error loading stock data:', error);
+            stockLoading.style.display = 'none';
+            stockTableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error loading stock data
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    function updateStockStatistics(stockData) {
+        const total = stockData.length;
+        const available = stockData.filter(item => !item.is_sold).length;
+        const sold = stockData.filter(item => item.is_sold).length;
+
+        document.getElementById('totalStockCount').textContent = total;
+        document.getElementById('availableStockCount').textContent = available;
+        document.getElementById('soldStockCount').textContent = sold;
+        document.getElementById('lastUpdated').textContent = 'Now';
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    }
+
+    function refreshStockData() {
+        loadStockData();
+    }
+
+    // File upload functionality (existing code)
     const fileInput = document.getElementById('fileInput');
     const fileUploadArea = document.getElementById('fileUploadArea');
     const fileInfo = document.getElementById('fileInfo');
@@ -449,5 +584,21 @@
 
     .border-primary {
         border-color: #007bff !important;
+    }
+
+    .stock-info-content {
+        max-width: 300px;
+        word-wrap: break-word;
+        font-family: 'Courier New', monospace;
+        font-size: 0.875rem;
+    }
+
+    #stockTable {
+        font-size: 0.875rem;
+    }
+
+    #stockTable th {
+        background-color: #f8f9fa;
+        font-weight: 600;
     }
 </style>
