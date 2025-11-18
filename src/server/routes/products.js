@@ -2,6 +2,7 @@ import express from 'express';
 import { createProduct, deleteProduct, getAllProducts, getProductById, updateProduct } from '../../utils/productUtil.js';
 import { createVariant, deleteVariant, getVariantById, getVariantsByProduct, updateVariant } from '../../utils/variantUtil.js';
 import { addStock } from '../../utils/stockUtil.js';
+import { notifyAllUsers } from '../../bot/sendMess.js'
 const router = express.Router();
 
 // Product list
