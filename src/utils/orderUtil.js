@@ -55,6 +55,24 @@ export async function getOrderById(id) {
     return rows.length ? rows[0] : null;
 }
 
+export async function getRecentOrder() {
+    try {
+        const [rows] = await db.execute(`SELECT *
+                                   FROM orders
+                                   WHERE status = 'success'
+                                   ORDER BY created_at DESC
+                                   LIMIT 5;
+                                   `);
+        if (rows.length === 0) {
+            throw new Error("no record ");
+        }
+        return rows;
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+}
+
 /**
  * Lấy tất cả đơn hàng của 1 user
  * @param {string} userId
@@ -82,6 +100,41 @@ export async function getOrdersByUserId(userId) {
         [userId]
     );
     return rows;
+}
+export async function getTotalOrderPending() {
+    try {
+        const [rows] = await db.execute(
+            "SELECT COUNT(*) AS total FROM orders WHERE status = 'pending'"
+        );
+        if (rows.length === 0) {
+            throw Error("error rows.length === 0");
+        }
+        return rows[0].total;
+    } catch (error) {
+        console.log(">>check error", error);
+        throw error;
+    }
+}
+
+export async function getMonthRevenue(month, year) {
+    try {
+        const [rows] = await db.execute(
+            `
+    SELECT IFNULL(SUM(total_amount), 0) AS total_revenue
+    FROM orders
+    WHERE status = 'success'
+      AND MONTH(created_at) = ?
+      AND YEAR(created_at)  = ?
+    `,
+            [month, year]
+        );
+
+        return rows[0].total_revenue;
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+
 }
 
 /**
@@ -231,3 +284,4 @@ export async function deleteOrder(id) {
     const [result] = await db.execute("DELETE FROM orders WHERE id = ?", [id]);
     return result.affectedRows > 0;
 }
+

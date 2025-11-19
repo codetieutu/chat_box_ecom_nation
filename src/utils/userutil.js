@@ -165,6 +165,21 @@ const getIdAdmin = async () => {
     }
 }
 
+const getTotalUser = async () => {
+    try {
+        const [rows] = await db.execute(
+            "SELECT COUNT(*) AS total FROM users"
+        );
+        if (rows.length === 0) {
+            throw Error("error rows.length === 0");
+        }
+        return rows[0].total;
+    } catch (error) {
+        console.log(">>check error", error);
+        throw error;
+    }
+}
+
 export {
     updateUser,
     getUserAll,
@@ -174,6 +189,7 @@ export {
     addUser,
     isAdmin,
     addAdmin,
-    getIdAdmin
+    getIdAdmin,
+    getTotalUser
 }
 

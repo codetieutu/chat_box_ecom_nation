@@ -96,6 +96,21 @@ export async function updateProduct(id, data) {
     return result.affectedRows > 0;
 }
 
+export async function getTotalProduct() {
+    try {
+        const [rows] = await db.execute(
+            "SELECT COUNT(*) AS total FROM products"
+        );
+        if (rows.length === 0) {
+            throw Error("error rows.length === 0");
+        }
+        return rows[0].total;
+    } catch (error) {
+        console.log(">>check error", error);
+        throw error;
+    }
+}
+
 
 /**
  * Xoá sản phẩm

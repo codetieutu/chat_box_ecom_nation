@@ -1,6 +1,8 @@
 <div class="row">
     <div class="col-12">
-        <h1 class="mb-4">Dashboard</h1>
+        <h1 class="mb-4">
+            <%= title %>
+        </h1>
     </div>
 </div>
 
@@ -11,7 +13,9 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4 class="card-title">150</h4>
+                        <h4 class="card-title">
+                            <%= statistics.totalProducts %>
+                        </h4>
                         <p class="card-text">Total Products</p>
                     </div>
                     <div class="align-self-center">
@@ -27,7 +31,9 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4 class="card-title">89</h4>
+                        <h4 class="card-title">
+                            <%= statistics.totalUsers %>
+                        </h4>
                         <p class="card-text">Total Users</p>
                     </div>
                     <div class="align-self-center">
@@ -43,7 +49,9 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4 class="card-title">45</h4>
+                        <h4 class="card-title">
+                            <%= statistics.pendingOrders %>
+                        </h4>
                         <p class="card-text">Pending Orders</p>
                     </div>
                     <div class="align-self-center">
@@ -59,7 +67,8 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4 class="card-title">$12,500</h4>
+                        <h4 class="card-title">$<%= statistics.totalRevenue.toLocaleString() %>
+                        </h4>
                         <p class="card-text">Total Revenue</p>
                     </div>
                     <div class="align-self-center">
@@ -90,45 +99,68 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>#001</td>
-                                <td>Nguyen Van A</td>
-                                <td>$150.00</td>
-                                <td><span class="badge bg-success">Completed</span></td>
-                                <td>2024-01-15</td>
-                            </tr>
-                            <tr>
-                                <td>#002</td>
-                                <td>Tran Thi B</td>
-                                <td>$220.00</td>
-                                <td><span class="badge bg-warning">Pending</span></td>
-                                <td>2024-01-16</td>
-                            </tr>
+                            <% recentOrders.forEach(order=> { %>
+                                <tr>
+                                    <td>
+                                        <%= order.id %>
+                                    </td>
+                                    <td>
+                                        <%= order.receiver_name %>
+                                    </td>
+                                    <td>$<%= order.total_amount %>
+                                    </td>
+                                    <td>
+                                        <span
+                                            class="badge bg-<%= order.status === 'completed' ? 'success' : 'warning' %>">
+                                            <%= order.status %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <%= new Date(order.created_at).toISOString() %>
+                                    </td>
+                                </tr>
+                                <% }); %>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
-
     <div class="col-md-4">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title mb-0">Quick Actions</h5>
+                <h5 class="card-title mb-0">Send Notification</h5>
             </div>
             <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="/products/add" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Add New Product
-                    </a>
-                    <a href="/users/add" class="btn btn-success">
-                        <i class="fas fa-user-plus"></i> Add New User
-                    </a>
-                    <a href="/orders/add" class="btn btn-info">
-                        <i class="fas fa-cart-plus"></i> Create Order
-                    </a>
-                </div>
+                <form action="/notifications/send" method="POST">
+                    <div class="mb-3">
+                        <label for="notificationMessage" class="form-label">Notification Message</label>
+                        <textarea class="form-control" id="notificationMessage" name="message" rows="5"
+                            placeholder="Enter your notification message here..." required></textarea>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Send Notification
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
+
+        <!-- Hiển thị thông báo thành công nếu có -->
+        <% if (typeof successMessage !=='undefined' && successMessage) { %>
+            <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                <%= successMessage %>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <% } %>
+
+                <!-- Hiển thị lỗi nếu có -->
+                <% if (typeof errorMessage !=='undefined' && errorMessage) { %>
+                    <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                        <%= errorMessage %>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    <% } %>
     </div>
 </div>

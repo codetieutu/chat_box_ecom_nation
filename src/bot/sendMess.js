@@ -36,7 +36,7 @@ export const notifyAllUsers = async (message) => {
         const normalUsers = users.filter(u => !u.is_admin);
 
 
-        for (const user of normalUsers) {
+        for (const user of users) {
             try {
                 await bot.telegram.sendMessage(user.id, `📢 ${message}`, {
                     parse_mode: "Markdown",

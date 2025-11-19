@@ -85,3 +85,29 @@ CREATE TABLE IF NOT EXISTS product_variants (
   price DECIMAL(15,2) DEFAULT 0,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
+
+// function mysql tính số dư theo tháng/năm
+
+DELIMITER $$
+
+CREATE FUNCTION get_month_revenue (
+    p_month INT,
+    p_year  INT
+)
+RETURNS DECIMAL(15,2)
+DETERMINISTIC
+READS SQL DATA
+BEGIN
+    DECLARE v_total DECIMAL(15,2);
+
+    SELECT IFNULL(SUM(total_amount), 0)
+    INTO v_total
+    FROM orders
+    WHERE status = 'success'
+      AND MONTH(created_at) = p_month
+      AND YEAR(created_at)  = p_year;
+
+    RETURN v_total;
+END $$
+
+DELIMITER ;

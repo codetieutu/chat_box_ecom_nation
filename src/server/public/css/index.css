@@ -1,0 +1,17 @@
+/* Thêm style cho notification form */
+.card .form-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.card .form-control:focus,
+.card .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Style cho alert messages */
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+}
