@@ -118,6 +118,7 @@ router.get('/variants/:id/stock', async (req, res) => {
     res.status(200).json(stocks)
 });
 
+
 // Update variants
 router.post('/variants/:id', async (req, res, next) => {
     const productId = parseInt(req.params.id, 10);
@@ -208,7 +209,7 @@ Dear customers, RESTOCK NOTIFICATION🚨
     // 
 });
 
-router.get('/variant/:id', async (req, res) => {
+router.get('/delete/variant/:id', async (req, res) => {
     res.redirect('/products');
     await deleteVariant(req.params.id);
 })
