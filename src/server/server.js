@@ -37,11 +37,13 @@ app.use('/orders', ordersRouter);
 //webhook nhận thông báo chuyển tiền
 import crypto from "crypto";
 import { getOrderById } from '../utils/orderUtil.js';
+import { getProductByQuantity } from '../utils/stockUtil.js';
+import { exportProductsToTxt } from '../bot/export.js';
 
 app.post("/payos/webhook", async (req, res) => {
     try {
         const body = req.body;
-        console.log(">>> PAYOS WEBHOOK:", JSON.stringify(body, null, 2));
+        // console.log(">>> PAYOS WEBHOOK:", JSON.stringify(body, null, 2));
 
         // ======== 1. Lấy data & signature từ webhook =========
         const data = body.data;
