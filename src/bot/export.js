@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
+import { getBot } from "./botInstance.js";
 
 // Get absolute path (useful in ESM)
 const __filename = fileURLToPath(import.meta.url);
@@ -8,6 +9,7 @@ const __dirname = path.dirname(__filename);
 
 export const exportProductsToTxt = async (telegramId, rows) => {
     try {
+        const bot = getBot
         if (!rows || rows.length === 0) {
             await bot.telegram.sendMessage(telegramId, "⚠️ Không có dữ liệu sản phẩm để gửi.");
             return;

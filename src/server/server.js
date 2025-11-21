@@ -112,7 +112,7 @@ app.post("/payos/webhook", async (req, res) => {
 
         // Ở PayOS, code = '00' và desc = 'Thành công' tức là PAID
         if (code === "00") {
-            const order = getOrderById(orderCode);
+            const order = await getOrderById(orderCode);
             const products = await getProductByQuantity(order.variant_id, order.quantity);
             await exportProductsToTxt(order.user_id, products);
 
