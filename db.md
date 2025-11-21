@@ -11,14 +11,6 @@ CREATE TABLE IF NOT EXISTS users (
   transaction INT DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS products (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(200) NOT NULL,
-  description TEXT,
-  quantity INT DEFAULT 0,
-  price DECIMAL(15,2) DEFAULT 0,
-  type ENUM('available', 'preorder') DEFAULT 'available'
-);
 
 
 CREATE TABLE IF NOT EXISTS stocks (
@@ -111,3 +103,12 @@ BEGIN
 END $$
 
 DELIMITER ;
+
+CREATE TABLE IF NOT EXISTS products (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(200) NOT NULL,
+  description TEXT,
+  quantity INT DEFAULT 0,
+  price DECIMAL(15,2) DEFAULT 0,
+  type ENUM('available', 'preorder') DEFAULT 'available'
+);

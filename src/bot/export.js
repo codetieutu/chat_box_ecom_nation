@@ -6,45 +6,45 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const exportProductsToTxt = async (ctx, rows) => {
+export const exportProductsToTxt = async (telegramId, rows) => {
     try {
         if (!rows || rows.length === 0) {
-            await ctx.reply("⚠️ No product data to export.");
+            await bot.telegram.sendMessage(telegramId, "⚠️ Không có dữ liệu sản phẩm để gửi.");
             return;
         }
 
-        // 📝 Generate text content
-        const lines = rows.map((p, i) => {
-            // If p.info exists, use it — otherwise build from other fields
-            if (p.info) return `${i + 1}. ${p.info}`;
-        });
+        // Tạo nội dung text
+        const lines = rows
+            .map((p, i) => {
+                // Nếu có p.info thì dùng, không thì build từ các field khác
+                if (p.info && p.info.trim() !== "") {
+                    return `${i + 1}. ${p.info}`;
+                }
 
-        const text = lines.join("\n");
+                const name = p.name || p.product_name || "Sản phẩm không tên";
+                const variant = p.variant_name ? ` | Variant: ${p.variant_name}` : "";
+                const price = p.price != null ? ` | Giá: ${p.price}` : "";
+                const quantity = p.quantity != null ? ` | SL: ${p.quantity}` : "";
 
-        // 🗂️ Generate a temporary file path (include date to avoid overwriting)
-        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-        const filePath = path.join(__dirname, `../exports/products_${timestamp}.txt`);
+                return `${i + 1}. ${name}${variant}${price}${quantity}`;
+            })
+            .filter(Boolean);
 
-        // Ensure export directory exists
-        await fs.mkdir(path.dirname(filePath), { recursive: true });
+        const text = `📦 *Danh sách sản phẩm:*\n\n` + lines.join("\n");
 
-        // Write file
-        await fs.writeFile(filePath, text, "utf8");
-
-        // 📤 Send to Telegram
-        await ctx.replyWithDocument(
-            { source: filePath },
-            { caption: "📦 Product list exported successfully!" }
-        );
-
-        // Optional: cleanup the file after sending (to avoid storage buildup)
-        setTimeout(async () => {
-            try {
-                await fs.unlink(filePath);
-            } catch { }
-        }, 5000);
+        // Telegram giới hạn ~4096 ký tự / message → cắt nhỏ nếu cần
+        const MAX_LEN = 4000;
+        if (text.length <= MAX_LEN) {
+            await bot.telegram.sendMessage(telegramId, text, { parse_mode: "Markdown" });
+        } else {
+            // Cắt thành nhiều đoạn
+            for (let i = 0; i < text.length; i += MAX_LEN) {
+                const chunk = text.slice(i, i + MAX_LEN);
+                await bot.telegram.sendMessage(telegramId, chunk, { parse_mode: "Markdown" });
+            }
+        }
     } catch (err) {
-        console.error("⚠️ exportProductsToTxt error:", err);
-        await ctx.reply("❌ Failed to export product list.");
+        console.error("⚠️ sendProductsToUser error:", err);
+        await bot.telegram.sendMessage(telegramId, "❌ Gửi danh sách sản phẩm thất bại.");
     }
 };

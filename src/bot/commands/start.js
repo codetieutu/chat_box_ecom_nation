@@ -23,10 +23,11 @@ function createMenuCaption(user) {
 
 <b>User Details:</b>
 ╰ Username : ${username}
-╰ Balance : ${user.balance} $
-╰ Transaction : ${user.transaction}
+
 `.trim();
 }
+// ╰ Balance: ${ user.balance } $
+// ╰ Transaction: ${ user.transaction }
 
 // Tạo keyboard menu
 function createMenuKeyboard() {
@@ -35,10 +36,10 @@ function createMenuKeyboard() {
             Markup.button.callback("📦 All Products", "SHOW_USER_PRODUCTS_0"),
             // Markup.button.callback("💎 Premium Apps", "PREMIUM_APPS"),
         ],
-        [
-            // Markup.button.callback("🤖 Bot Info", "BOT_INFO"),
-            Markup.button.callback("💰 Deposit", "DEPOSIT"),
-        ],
+        // [
+        //     // Markup.button.callback("🤖 Bot Info", "BOT_INFO"),
+        //     Markup.button.callback("💰 Deposit", "DEPOSIT"),
+        // ],
     ]);
 }
 

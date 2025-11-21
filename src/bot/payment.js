@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import QRCode from 'qrcode'
 dotenv.config();
 import { HOST, PORT } from "../utils/env.js";
+import { createOrder } from "../utils/orderUtil.js";
 const payos = new PayOS({
     clientId: process.env.PAYOS_CLIENT_ID,
     apiKey: process.env.PAYOS_API_KEY,
@@ -14,6 +15,7 @@ const payos = new PayOS({
 export async function payment(ctx, totalPayment) {
     try {
         const userId = ctx.from.id;
+        const product = ctx.session.product;
 
         const amount = Number.parseInt(totalPayment, 10);
         if (!Number.isFinite(amount) || amount <= 0) {
@@ -25,6 +27,18 @@ export async function payment(ctx, totalPayment) {
             .toString(36)
             .slice(2, 7)
             .toUpperCase()}`;
+        await createOrder({
+            id: orderCode,
+            user_id: String(userId),          // users.id là VARCHAR(25), nên ép sang string
+            product_id: product.productId,
+            variant_id: product.id,
+            quantity: product.currenQuan,
+            unit_price: product.price,
+            total_amount: totalPayment,
+            note: description,                // lưu description vào note cho dễ truy vết
+            receiver_name: null,
+            product_name: null,
+        });
 
         const paymentLink = await payos.paymentRequests.create({
             orderCode,
@@ -35,6 +49,7 @@ export async function payment(ctx, totalPayment) {
         });
 
         // console.log(">>> paymentLink:", paymentLink);
+
 
         const qrCode = paymentLink.qrCode; // Chuỗi EMVCo QR raw data
 
@@ -62,6 +77,7 @@ Quét mã QR để thanh toán.
                     parse_mode: "Markdown",
                 }
             );
+
 
             return orderCode;
         } catch (error) {

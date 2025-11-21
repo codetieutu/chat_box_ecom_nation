@@ -43,7 +43,7 @@ export default (bot) => {
             const variantButtons = [];
 
             variants.forEach(v => {
-                const label = `${v.variant_name} - ${Number(v.price).toLocaleString()}$ (x${v.quantity}) `;
+                const label = `${v.variant_name} - ${Number(v.price).toLocaleString()}VND (x${v.quantity}) `;
                 // callback này tuỳ bạn, mình đặt là USER_VARIANT_<id> để sau này handle chi tiết biến thể
                 variantButtons.push(
                     Markup.button.callback(label, `BUY_VARIANT_${v.id}`)

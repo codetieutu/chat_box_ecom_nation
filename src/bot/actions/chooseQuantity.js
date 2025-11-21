@@ -46,9 +46,9 @@ export default (bot) => {
 
 <b>📋 Order Confirmation:</b>
 ├ <b>Variant:</b> ${state.name}
-├ <b>Price per item:</b> ${state.price.toLocaleString()} $
+├ <b>Price per item:</b> ${state.price.toLocaleString()} VND
 ├ <b>Quantity:</b> ${state.currenQuan}
-├ <b>Total Payment:</b> <b>${totalPayment.toLocaleString()} $</b>
+├ <b>Total Payment:</b> <b>${totalPayment.toLocaleString()} VND</b>
 ├ <b>Available stock:</b> ${state.quantity} account
 └ <b>Description:</b> ${state.description}
         `.trim();
