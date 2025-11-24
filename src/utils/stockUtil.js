@@ -30,7 +30,7 @@ const deleteStock = async (stockId) => {
     await db.query("DELETE FROM stocks WHERE id = ?", [stockId]);
 };
 
-export const getProductByQuantity = async (variantId, quantity) => {
+const getProductByQuantity = async (variantId, quantity, orderId) => {
     try {
 
         const [rows] = await db.query(
@@ -51,7 +51,7 @@ export const getProductByQuantity = async (variantId, quantity) => {
 
         const placeholders = stockIds.map(() => "?").join(",");
         await db.query(
-            `UPDATE stocks SET is_sold = true WHERE id IN (${placeholders})`,
+            `UPDATE stocks SET is_sold = true, order_id = '${orderId}' WHERE id IN (${placeholders})`,
             stockIds
         );
 
@@ -62,11 +62,41 @@ export const getProductByQuantity = async (variantId, quantity) => {
     }
 };
 
+const getStockByOrder = async (orderId) => {
+    try {
+        const [rows] = await db.query("SELECT * FROM stocks WHERE order_id = ?", [orderId]);
+        return rows;
+    } catch (error) {
+        console.log(">>check err", error)
+    }
+}
+
+const getOrderByStock = async (info) => {
+    try {
+        const [rows] = await db.query(
+            "SELECT * FROM stocks WHERE info LIKE ?",
+            [`%${info}%`]
+        );
+        if (rows.length === 0) {
+            return null;
+        }
+        else {
+            return rows[0].order_id;
+        }
+    } catch (error) {
+        console.log(">>check err", error)
+    }
+}
+
 
 export {
     addStock,
     getStocksByProduct,
     markStockAsSold,
     deleteStock,
+    getProductByQuantity,
+    getOrderByStock,
+    getStockByOrder
+
 
 }

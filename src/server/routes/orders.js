@@ -1,13 +1,19 @@
 import express from 'express';
-import { getAllOrders, getOrderById, updateOrder } from '../../utils/orderUtil.js';
+import { getAllOrders, getMonthRevenue, getOrderById, updateOrder } from '../../utils/orderUtil.js';
 import { notifyUser } from '../../bot/sendMess.js'
-import { getUserById, updateUser } from '../../utils/userUtil.js';
+import { getOrderByStock, getStockByOrder } from '../../utils/stockUtil.js';
 const router = express.Router();
 
 // Order list
 router.get('/', async (req, res) => {
     const orders = await getAllOrders();
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const year = now.getFullYear();
+    const monthRenevue = await getMonthRevenue(month, year);
+    orders.monthRenevue = monthRenevue;
     res.render('orders/list', {
+        searchQuery: '',
         title: 'Order Management',
         active: 'orders',
         orders: orders,
@@ -37,28 +43,55 @@ ${seller_note}
 });
 
 // Cancel order
-router.post('/cancel/:id', async (req, res) => {
-    const orderId = parseInt(req.params.id);
+router.get('/search', async (req, res) => {
     try {
-        await updateOrder(orderId, { status: "cancelled" });
-        const order = await getOrderById(orderId);
-        const user = await getUserById(order.user_id);
-        const message = `
-❌ *Your Order Has Been Cancelled!*
-────────────────────
-💬 *Message from Seller:*
-Dear customer, your ${order.product_name} order was canceled by the seller.
-A total of ${order.total_amount}$ has been successfully refunded to your account balance.
-`;
+        const searchQuery = req.query.q || '';
 
-        await updateUser(order.user_id, { balance: parseFloat(user.balance) + parseFloat(order.total_amount) });
-        await notifyUser(user.id, message)
+        // Tìm kiếm orders dựa trên query
+        const orderId = await getOrderByStock(searchQuery)
+        const orders = await getOrderById(orderId);
+
+        const now = new Date();
+        const month = now.getMonth() + 1;
+        const year = now.getFullYear();
+        const monthRenevue = await getMonthRevenue(month, year);
+        orders.monthRenevue = monthRenevue;
+        res.render('orders/list', {
+            searchQuery: '',
+            title: 'Order Management',
+            active: 'orders',
+            orders: orders,
+            pageCss: 'orders.css'
+        });
     } catch (error) {
-        console.log(error)
-        throw error;
+        console.error('Search error:', error);
+        res.status(500).render('error', { message: 'Search failed' });
     }
+});
 
-    res.redirect('/orders');
+router.get('/:orderId/stock', async (req, res) => {
+    try {
+        console.log("activate")
+        const orderId = req.params.orderId;
+
+        // Lấy thông tin order
+        const stocks = await getStockByOrder(orderId);
+        const quantity = stocks.length;
+
+
+        res.json({
+            success: true,
+            quantity,
+            stocks,
+        });
+
+    } catch (error) {
+        console.error('Stock API error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
 });
 
 export default router;

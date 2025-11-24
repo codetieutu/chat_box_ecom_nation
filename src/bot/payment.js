@@ -1,11 +1,9 @@
 import { Buffer } from "node:buffer";
-// import { payos } from "../utils/payosUtil.js";
 import { PayOS } from "@payos/node";
 import dotenv from "dotenv";
 import QRCode from 'qrcode'
 dotenv.config();
 import { HOST, PORT } from "../utils/env.js";
-import { createOrder } from "../utils/orderUtil.js";
 const payos = new PayOS({
     clientId: process.env.PAYOS_CLIENT_ID,
     apiKey: process.env.PAYOS_API_KEY,
@@ -27,18 +25,6 @@ export async function payment(ctx, totalPayment) {
             .toString(36)
             .slice(2, 7)
             .toUpperCase()}`;
-        await createOrder({
-            id: orderCode,
-            user_id: String(userId),          // users.id là VARCHAR(25), nên ép sang string
-            product_id: product.productId,
-            variant_id: product.id,
-            quantity: product.currenQuan,
-            unit_price: product.price,
-            total_amount: totalPayment,
-            note: description,                // lưu description vào note cho dễ truy vết
-            receiver_name: null,
-            product_name: null,
-        });
 
         const paymentLink = await payos.paymentRequests.create({
             orderCode,
@@ -47,9 +33,6 @@ export async function payment(ctx, totalPayment) {
             returnUrl: `${HOST}:${PORT}/return`,
             cancelUrl: `$${HOST}:${PORT}/cancel`,
         });
-
-        // console.log(">>> paymentLink:", paymentLink);
-
 
         const qrCode = paymentLink.qrCode; // Chuỗi EMVCo QR raw data
 
@@ -68,12 +51,12 @@ export async function payment(ctx, totalPayment) {
                 { source: qrBuffer },
                 {
                     caption: `
-💳 *Thanh toán đơn hàng*
-Số tiền: *${amount.toLocaleString("vi-VN")} VND*
-Nội dung: \`${description}\`
+            💳 *Thanh toán đơn hàng*
+            Số tiền: *${amount.toLocaleString("vi-VN")} VND*
+            Nội dung: \`${description}\`
 
-Quét mã QR để thanh toán.
-            `,
+            Quét mã QR để thanh toán.
+                        `,
                     parse_mode: "Markdown",
                 }
             );
@@ -83,13 +66,7 @@ Quét mã QR để thanh toán.
         } catch (error) {
             console.error('Lỗi tạo mã QR:', error);
             // Fallback: gửi mã code dạng text nếu tạo ảnh thất bại
-            await ctx.reply(`
-⚠️ *Không thể tạo mã QR ảnh*
-Số tiền: *${amount.toLocaleString("vi-VN")} VND*
-Nội dung: \`${description}\`
-
-Mã thanh toán: \`${qrCode}\`
-    `, { parse_mode: "Markdown" });
+            await ctx.reply(`⚠️ Lỗi khi tạo mã thanh toán`);
 
             return orderCode;
         }

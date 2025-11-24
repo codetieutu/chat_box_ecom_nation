@@ -52,7 +52,7 @@ export async function getOrderById(id) {
      WHERE id = ?`,
         [id]
     );
-    return rows.length ? rows[0] : null;
+    return rows.length ? rows : null;
 }
 
 export async function getRecentOrder() {

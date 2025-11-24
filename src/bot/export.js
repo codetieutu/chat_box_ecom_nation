@@ -9,8 +9,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const exportProductsToTxt = async (telegramId, rows) => {
+    const bot = getBot();
     try {
-        const bot = getBot();
         if (!rows || rows.length === 0) {
             await bot.telegram.sendMessage(telegramId, "⚠️ Không có dữ liệu sản phẩm để gửi.");
             return;
@@ -34,7 +34,7 @@ export const exportProductsToTxt = async (telegramId, rows) => {
             .filter(Boolean);
 
         const text = `📦 *Danh sách sản phẩm:*\n` + lines.join("\n");
-	
+
 
         // Telegram giới hạn ~4096 ký tự / message → cắt nhỏ nếu cần
         const MAX_LEN = 4000;
@@ -47,7 +47,7 @@ export const exportProductsToTxt = async (telegramId, rows) => {
                 await bot.telegram.sendMessage(telegramId, chunk, { parse_mode: "Markdown" });
             }
         }
-	await notifyUser(telegramId,` /menu để xem sản phẩm`) 
+        await notifyUser(telegramId, ` /menu để xem sản phẩm`)
     } catch (err) {
         console.error("⚠️ sendProductsToUser error:", err);
         await bot.telegram.sendMessage(telegramId, "❌ Gửi danh sách sản phẩm thất bại.");

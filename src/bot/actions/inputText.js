@@ -1,78 +1,12 @@
 import { getUserById, updateUser, addAdmin } from "../../utils/userUtil.js";
-import { showUserDetail } from "./admin/UserAction.js";
 import { ADMIN_PASSWORD } from "../../utils/env.js";
 import { adminMenu } from "../commands/admin.js";
 import { Markup } from "telegraf";
-import { updateProduct } from "../../utils/productUtil.js";
-import { showAdminProduct } from "./admin/detailProduct.js";
-import { getProductByQuantity } from "../../utils/stockUtil.js";
-import { exportProductsToTxt } from "../export.js";
 import { showMenu } from "../commands/start.js";
-import { getOrderById } from "../../utils/orderUtil.js";
-import { notifyAdmin, notifyUser } from "../sendMess.js";
-import { showOrders } from "./admin/showOrder.js";
-import { checkout } from "../../utils/payment.js";
+import { notifyAdmin } from "../sendMess.js";
 import { getTransactionByHash } from "../../utils/payment2.js";
 import { addTransaction } from "../../utils/depositUtil.js";
 
-
-const inputDeposit = async (ctx) => {
-    const amount = parseFloat(ctx.message.text);
-    if (isNaN(amount) || amount <= 0) {
-        await ctx.reply("❌ Invalid amount, re-enter:");
-        return;
-    }
-    const userId = ctx.session.depositTarget;
-    try {
-        const user = await getUserById(userId);
-        if (user) {
-            const balance = parseFloat(user.balance) + amount
-            await updateUser(userId, { balance });
-            await ctx.reply(`💰 Deposited  ${amount}$ to user: ${user.username}`);
-            ctx.session.step = null;
-            ctx.session.depositTarget = null;
-            await showUserDetail(ctx, userId, false);
-        }
-    } catch (error) {
-        throw error;
-    }
-
-}
-
-const inputQuantity = async (ctx) => {
-    const quantity = parseInt(ctx.message.text);
-    const userId = ctx.from.id;
-    const user = await getUserById(userId);
-
-    const product = ctx.session.selectedProduct;
-    if (isNaN(quantity) || quantity <= 0) {
-        await ctx.reply("❌ Invalid quantity, please re-enter:");
-        return;
-    }
-    if (quantity > product.quantity && product.type === "available") {
-        await ctx.reply("❌ Quantity too large, please re-enter:");
-        return;
-    }
-    if (quantity * parseFloat(product.price) > parseFloat(user.balance)) {
-        await ctx.reply("❌ Insufficient funds, please deposit.");
-        return;
-    }
-    if (product.type === "preorder") {
-        ctx.session.step = "wait_attach_content";
-        ctx.session.quantity = quantity;
-        await ctx.reply("💰 Enter the attached content:", {
-            parse_mode: "Markdown",
-        });
-        return;
-    }
-    const products = await getProductByQuantity(product.id, quantity);
-    await exportProductsToTxt(ctx, products);
-    const userNew = await updateUser(userId, { balance: parseFloat(user.balance) - quantity * parseFloat(product.price), transaction: parseInt(user.transaction) + quantity });
-    ctx.session.selectedProduct = null;
-    ctx.session.step = null
-    showMenu(ctx, userNew);
-
-}
 
 const inputContent = async (ctx) => {
     const content = ctx.message.text.trim()
@@ -114,46 +48,6 @@ const inputPassword = async (ctx) => {
     ctx.session.step = null;
 }
 
-const inputCompletedMess = async (ctx) => {
-    const content = ctx.message.text.trim();
-    const orderId = ctx.session.OrderId;
-
-    try {
-        const order = await getOrderById(orderId);
-        if (!order) {
-            await ctx.reply("❌ Order not found.");
-            ctx.session.step = null;
-            ctx.session.targetOrderId = null;
-            return;
-        }
-
-        // Cập nhật trạng thái đơn hàng → completed
-
-        // 📩 Gửi thông báo đến người mua
-        const message = `
-✅ *Your Order Has Been Completed!*
-────────────────────
-💬 *Message from Seller:*
-${content}
-`;
-
-        await notifyUser(order.user_id, message);
-
-        // Thông báo lại cho admin
-        await ctx.reply(
-            `✅ Order #${orderId} has been marked as *Completed* and message sent to buyer.`,
-            { parse_mode: "Markdown" }
-        );
-    } catch (err) {
-        console.error("❌ completeOrder error:", err);
-        await ctx.reply("⚠️ Failed to complete the order.");
-    }
-
-    // Reset session
-    ctx.session.step = null;
-    ctx.session.OrderId = null;
-    showOrders(ctx, 0, false)
-}
 
 const inputTxId = async (ctx) => {
     const txid = ctx.message.text.trim();
@@ -217,50 +111,8 @@ export default (bot) => {
                 break;
             }
 
-            case "wait_quantity": {
-                inputQuantity(ctx);
-                break;
-            }
-
             case "wait_attach_content": {
                 inputContent(ctx);
-                break;
-            }
-
-            case "editing_field": {
-                const productId = ctx.session.targetProduct;
-                const field = ctx.session.field;
-                const value = ctx.message.text.trim();
-
-                if (!productId || !field) {
-                    await ctx.reply("⚠️ Editing session not found. Please select a product again.");
-                    ctx.session.step = null;
-                    return;
-                }
-
-                // Validate price
-                if (field === "price") {
-                    const num = parseFloat(value.replace(/,/g, ""));
-                    if (isNaN(num) || num <= 0) {
-                        await ctx.reply("❌ Invalid price. Please enter a valid number:");
-                        return;
-                    }
-                    await updateProduct(productId, { [field]: num });
-                } else {
-                    await updateProduct(productId, { [field]: value });
-                }
-                showAdminProduct(ctx, productId, true);
-
-                // Reset session
-                ctx.session.step = null;
-                ctx.session.field = null;
-                ctx.session.targetProduct = null;
-                break;
-            }
-
-            // === Nhập số tiền nạp ===
-            case "waiting_deposit": {
-                inputDeposit(ctx);
                 break;
             }
 

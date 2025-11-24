@@ -1,49 +1,94 @@
 import express from "express";
-import { payos } from "../bot/utils/payosUtil.js";
-import { getProductByQuantity } from "../utils/stockUtil.js";
-import { exportProductsToTxt } from "../bot/export.js";
-
 const router = express.Router();
+
+import crypto from "crypto";
+import { getOrderById, updateOrderStatus } from '../../utils/orderUtil.js';
+import { getProductByQuantity } from '../../utils/stockUtil.js';
+import { exportProductsToTxt } from '../../bot/export.js';
 
 router.post("/payos/webhook", async (req, res) => {
     try {
-        const data = await payos.webhooks.verify(req.body);
+        const body = req.body;
+        res.status(200).send("ok");
+        // console.log(">>> PAYOS WEBHOOK:", JSON.stringify(body, null, 2));
 
-        if (data.code !== "PAYMENT_SUCCESS") {
-            return res.json({ message: "ignored" });
+        // ======== 1. Lấy data & signature từ webhook =========
+        const data = body.data;
+        const signature = body.signature;
+
+        if (!data || !signature) {
+            console.error("❌ Thiếu data hoặc signature");
+            return res.status(400).send("invalid webhook");
         }
 
-        const { orderCode } = data.data;
-
-        // Lấy order pending
-        const pending = global.pendingOrders?.[orderCode];
-        if (!pending) {
-            console.log("❌ Không tìm thấy orderCode:", orderCode);
-            return res.json({ message: "no_order" });
+        // ======== 2. Hàm sắp xếp key =========
+        function sortObjByKey(object) {
+            return Object.keys(object)
+                .sort()
+                .reduce((obj, key) => {
+                    obj[key] = object[key];
+                    return obj;
+                }, {});
         }
 
-        const { userId, variantId, quantity } = pending;
+        // ======== 3. Hàm chuyển object → query string theo chuẩn PayOS =========
+        function convertObjToQueryStr(object) {
+            return Object.keys(object)
+                .filter((key) => object[key] !== undefined)
+                .map((key) => {
+                    let value = object[key];
 
-        // 1️⃣ Lấy stock để giao hàng
-        const stocks = await getProductByQuantity(variantId, quantity);
+                    if (value && Array.isArray(value)) {
+                        value = JSON.stringify(
+                            value.map((val) => sortObjByKey(val))
+                        );
+                    }
 
-        if (!stocks || stocks.length < quantity) {
-            return res.json({ message: "not_enough_stock" });
+                    if ([null, undefined, "null", "undefined"].includes(value)) {
+                        value = "";
+                    }
+
+                    return `${key}=${value}`;
+                })
+                .join("&");
         }
 
-        // 2️⃣ Gửi file txt cho user
-        await exportProductsToTxt({ userId }, stocks);
+        // ======== 4. Tạo chuỗi để hash =========
+        const sortedData = sortObjByKey(data);
+        const dataQueryStr = convertObjToQueryStr(sortedData);
 
-        // 3️⃣ Xóa order pending
-        delete global.pendingOrders[orderCode];
+        // console.log(">>> dataQueryStr:", dataQueryStr);
 
-        console.log("🎉 Đã giao hàng cho user:", userId);
+        // ======== 5. Tạo signature bằng HMAC SHA256 =========
+        const calculatedSignature = crypto
+            .createHmac("sha256", process.env.PAYOS_CHECKSUM_KEY)
+            .update(dataQueryStr)
+            .digest("hex");
 
-        return res.json({ message: "done" });
+        // console.log(">>> calculatedSignature:", calculatedSignature);
+
+        // ======== 6. So sánh chữ ký =========
+        if (calculatedSignature !== signature) {
+            console.error("❌ Signature không hợp lệ");
+            return res.status(400).send("invalid signature");
+        }
+
+        // ======== 7. Xử lý thanh toán =========
+        const { orderCode, amount, description, code, desc } = data;
+
+
+        // Ở PayOS, code = '00' và desc = 'Thành công' tức là PAID
+        if (code === "00" && desc == "success") {
+            const order = await getOrderById(orderCode);
+            const products = await getProductByQuantity(order.variant_id, order.quantity, order.id);
+            await exportProductsToTxt(order.user_id, products);
+            updateOrderStatus(order.id, "success")
+        }
+        return res.status(200).json({ error: 0, message: "Received" })
 
     } catch (err) {
         console.error("Webhook error:", err);
-        res.json({ message: "error" });
+        res.status(500).send("server error");
     }
 });
 

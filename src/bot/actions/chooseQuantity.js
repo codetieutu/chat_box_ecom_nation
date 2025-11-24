@@ -14,6 +14,9 @@ export default (bot) => {
             await ctx.reply("❌ Variant not found.");
             return;
         }
+        if (variant.quantity == 0) {
+            return ctx.reply(" ❌ Đã hết sản phẩm trong kho")
+        }
 
         // Đảm bảo có session
         ctx.session = ctx.session || {};

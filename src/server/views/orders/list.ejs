@@ -16,6 +16,29 @@
 </div>
 
 <div class="container-fluid">
+    <!-- Search Bar -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="search-box">
+                <form id="searchForm" action="/orders/search" method="GET" class="d-flex">
+                    <div class="input-group">
+                        <input type="text" name="q" class="form-control search-input"
+                            placeholder="Search orders by buyer name, product name, or order ID..."
+                            value="<%= searchQuery || '' %>">
+                        <button type="submit" class="btn btn-primary search-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        <% if (searchQuery) { %>
+                            <a href="/orders" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i>
+                            </a>
+                            <% } %>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Statistics Cards -->
     <div class="stats-cards">
         <div class="stat-card">
@@ -44,7 +67,7 @@
         </div>
         <div class="stat-card">
             <div class="stat-number">
-                <%= orders.reduce((total, order)=> total + order.total_amount, 0).toLocaleString() %> $
+                <%= orders.monthRevenue %> VND
             </div>
             <div class="stat-label">Total Revenue</div>
         </div>
@@ -77,7 +100,7 @@
                     <th width="100" class="text-center">Quantity</th>
                     <th width="150" class="text-end">Total Money</th>
                     <th width="120" class="text-center">Status</th>
-                    <th width="180" class="text-center">Actions</th>
+                    <th width="200" class="text-center">Actions</th>
                 </tr>
             </thead>
             <tbody id="ordersTableBody">
@@ -91,21 +114,20 @@
                                 <%= order.receiver_name %>
                             </div>
                             <small class="text-muted">
-                                <%= order.order_date %>
+                                <i class="fas fa-calendar me-1"></i>
+                                <%= order.created_at %>
                             </small>
                         </td>
                         <td>
                             <div class="product-name">
                                 <%= order.product_name %>
                             </div>
-                            <% if (order.note) { %>
-                                <div class="mt-1">
-                                    <button type="button" class="btn btn-sm btn-outline-info view-note-btn"
-                                        data-note="<%= order.note %>" onclick="viewNote(this)">
-                                        <i class="fas fa-sticky-note me-1"></i>View Note
-                                    </button>
-                                </div>
-                                <% } %>
+                            <div class="mt-1">
+                                <button type="button" class="btn btn-sm btn-outline-primary view-stock-btn"
+                                    data-order-id="<%= order.id %>" onclick="viewStock(<%= order.id %>)">
+                                    <i class="fas fa-boxes me-1"></i>View Stock
+                                </button>
+                            </div>
                         </td>
                         <td class="text-center">
                             <span class="quantity-badge">
@@ -164,10 +186,21 @@
         <div class="empty-state">
             <i class="fas fa-shopping-cart"></i>
             <h3>No Orders Found</h3>
-            <p class="text-muted">There are no orders in the system yet.</p>
+            <p class="text-muted">
+                <% if (searchQuery) { %>
+                    No orders found matching your search criteria.
+                    <% } else { %>
+                        There are no orders in the system yet.
+                        <% } %>
+            </p>
             <a href="/orders/add" class="btn btn-primary">
                 <i class="fas fa-plus me-2"></i>Create First Order
             </a>
+            <% if (searchQuery) { %>
+                <a href="/orders" class="btn btn-outline-secondary ms-2">
+                    <i class="fas fa-arrow-left me-2"></i>Back to All Orders
+                </a>
+                <% } %>
         </div>
         <% } %>
 </div>
@@ -200,12 +233,63 @@
     </div>
 </div>
 
-<!-- Note View Modal -->
+<!-- Stock Info Modal -->
+<div class="modal fade" id="stockModal" tabindex="-1" aria-labelledby="stockModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="stockModalLabel">Stock Information - Order #<span id="stockOrderId"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="stockLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading stock information...</p>
+                </div>
+                <div id="stockContent" style="display: none;">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h6 class="border-bottom pb-2">Stock Summary</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Total Stock Items:</strong></td>
+                                    <td><span class="badge bg-primary" id="stockQuantity">0</span></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <h6 class="border-bottom pb-2">Stock Details</h6>
+                        <div id="stockLocations" class="table-responsive">
+                            <!-- Stock info will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                <div id="stockError" class="alert alert-danger text-center" style="display: none;">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span id="stockErrorMessage">Failed to load stock information.</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="refreshStock()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Note View Modal (chỉ cho delivery note) -->
 <div class="modal fade" id="noteModal" tabindex="-1" aria-labelledby="noteModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="noteModalLabel">Order Note</h5>
+                <h5 class="modal-title" id="noteModalLabel">Delivery Note</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -218,7 +302,45 @@
     </div>
 </div>
 
+<style>
+    /* Search Box Styles */
+    .search-box {
+        max-width: 500px;
+    }
+
+    .search-input {
+        border-right: none;
+    }
+
+    .search-input:focus {
+        border-color: #ced4da;
+        box-shadow: none;
+    }
+
+    .search-btn {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+
+    .input-group .btn-outline-secondary {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        margin-left: 5px;
+    }
+
+    /* Stock table styles */
+    .stock-location-table {
+        font-size: 0.875rem;
+    }
+
+    .stock-location-table th {
+        background-color: #f8f9fa;
+    }
+</style>
+
 <script>
+    let currentOrderId = null;
+
     function filterOrders(status) {
         const rows = document.querySelectorAll('.order-row');
         const filterBtns = document.querySelectorAll('.filter-btn');
@@ -259,6 +381,88 @@
         modal.show();
     }
 
+    function viewStock(orderId) {
+        currentOrderId = orderId;
+        const modal = new bootstrap.Modal(document.getElementById('stockModal'));
+
+        // Reset modal state
+        document.getElementById('stockLoading').style.display = 'block';
+        document.getElementById('stockContent').style.display = 'none';
+        document.getElementById('stockError').style.display = 'none';
+        document.getElementById('stockOrderId').textContent = orderId;
+
+        // Load stock data
+        loadStockData(orderId);
+        modal.show();
+    }
+
+    function loadStockData(orderId) {
+        fetch(`/orders/${orderId}/stock`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('stockLoading').style.display = 'none';
+
+                if (data.success) {
+                    // Populate stock data
+                    document.getElementById('stockQuantity').textContent = data.quantity || 0;
+
+                    // Populate stock info
+                    const locationsContainer = document.getElementById('stockLocations');
+                    if (data.stocks && data.stocks.length > 0) {
+                        let locationsHTML = `
+                        <table class="table table-sm stock-location-table">
+                            <thead>
+                                <tr>
+                                    <th>Stock Info</th>
+                                    <th class="text-center">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                        data.stocks.forEach((stock, index) => {
+                            locationsHTML += `
+                            <tr>
+                                <td><strong>Stock ${index + 1}</strong></td>
+                                <td class="text-center">${stock.info || 'No information'}</td>
+                            </tr>
+                        `;
+                        });
+
+                        locationsHTML += `</tbody></table>`;
+                        locationsContainer.innerHTML = locationsHTML;
+                    } else {
+                        locationsContainer.innerHTML = '<p class="text-muted">No stock information found.</p>';
+                    }
+
+                    document.getElementById('stockContent').style.display = 'block';
+                } else {
+                    throw new Error(data.message || 'Failed to load stock data');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading stock data:', error);
+                document.getElementById('stockLoading').style.display = 'none';
+                document.getElementById('stockError').style.display = 'block';
+                document.getElementById('stockErrorMessage').textContent =
+                    error.message || 'Failed to load stock information. Please try again.';
+            });
+    }
+
+    function refreshStock() {
+        if (currentOrderId) {
+            document.getElementById('stockLoading').style.display = 'block';
+            document.getElementById('stockContent').style.display = 'none';
+            document.getElementById('stockError').style.display = 'none';
+            loadStockData(currentOrderId);
+        }
+    }
+
     // Add confirmation for cancel action
     document.addEventListener('DOMContentLoaded', function () {
         const cancelForms = document.querySelectorAll('form[action*="cancel"]');
@@ -288,5 +492,15 @@
                 }
             }
         });
+
+        // Auto-submit search form when pressing Enter
+        const searchInput = document.querySelector('.search-input');
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('searchForm').submit();
+                }
+            });
+        }
     });
 </script>
