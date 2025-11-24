@@ -26,7 +26,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-global.pendingOrders = {};
+
 
 // Routes
 app.use('/', indexRouter);
@@ -108,11 +108,13 @@ app.post("/payos/webhook", async (req, res) => {
 
         // ======== 7. Xử lý thanh toán =========
         const { orderCode, amount, description, code, desc, status } = data;
-
+	//console.log(">>check info",orderCode," ",code);
 
         // Ở PayOS, code = '00' và desc = 'Thành công' tức là PAID
         if (code === "00") {
             const order = await getOrderById(orderCode);
+            //console.log(">>check order", order);
+
             const products = await getProductByQuantity(order.variant_id, order.quantity);
             await exportProductsToTxt(order.user_id, products);
 

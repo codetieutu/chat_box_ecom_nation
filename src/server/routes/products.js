@@ -189,11 +189,11 @@ router.post('/stock-upload/:id', async (req, res) => {
 
             // 4️⃣ Tạo message thông báo restock
             const message = `
-Dear customers, RESTOCK NOTIFICATION🚨
+🚨Cập nhật kho hàng🚨
 
-🛒 Product: ${product ? product.name : 'Unknown product'}
-🎫 Variant: ${variant.variant_name}
-📊 Added stock: ${d} account(s)
+🛒 Sản phẩm: ${product ? product.name : 'Unknown product'}
+🎫 Loại: ${variant.variant_name}
+📊 Đã thêm: ${d} tài khoản
             `.trim();
 
 

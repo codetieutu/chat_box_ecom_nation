@@ -64,7 +64,7 @@ export async function getRecentOrder() {
                                    LIMIT 5;
                                    `);
         if (rows.length === 0) {
-            throw new Error("no record ");
+           []
         }
         return rows;
     } catch (error) {

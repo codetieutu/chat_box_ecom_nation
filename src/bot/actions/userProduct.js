@@ -38,7 +38,7 @@ export default (bot) => {
 
             // Format message text
             let text = `🏷️ *${product.name}*\n`;
-            text += `📦 *Type:* ${product.type}\n`;
+            text += `📦 *Trạng thái:* ${product.type}\n`;
             // Tạo các nút variant
             const variantButtons = [];
 
@@ -57,7 +57,7 @@ export default (bot) => {
             }
 
             // Thêm nút Back
-            rows.push([Markup.button.callback("↩️ Back", "SHOW_USER_PRODUCTS_0")]);
+            rows.push([Markup.button.callback("↩️ Quay lại", "SHOW_USER_PRODUCTS_0")]);
 
             const keyboard = Markup.inlineKeyboard(rows);
 

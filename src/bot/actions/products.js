@@ -5,7 +5,7 @@ const showProducts = async (ctx, page, command = { dir: "", back: "" }) => {
     try {
         const { products, total } = await getProductByPage(page);
         // ==== Tạo text hiển thị ====
-        let text = `📋 *PRODUCT LIST (Page ${page + 1}/${total}):*\n\n`;
+        let text = `📋 *Danh sách sản phẩm (Page ${page + 1}/${total}):*\n\n`;
         // products.forEach((p, i) => {
         //     if (p.type === "preorder")
         //         text += `${i + 1}. ${p.name} — ${p.price.toLocaleString()}$ (${p.type})\n`;
@@ -26,7 +26,7 @@ const showProducts = async (ctx, page, command = { dir: "", back: "" }) => {
         const navButtons = [];
         if (page > 0) navButtons.push(Markup.button.callback("⏮ Prev", `SHOW_USER_PRODUCTS_${page - 1}`));
         if (page < total - 1) navButtons.push(Markup.button.callback("⏭ Next", `SHOW_USER_PRODUCTS_${page + 1}`));
-        navButtons.push(Markup.button.callback("↩️ Back", `${command.back}`));
+        navButtons.push(Markup.button.callback("↩️ Quay lại", `${command.back}`));
         buttonRows.push(navButtons);
 
         // ==== Gửi hoặc cập nhật caption ====

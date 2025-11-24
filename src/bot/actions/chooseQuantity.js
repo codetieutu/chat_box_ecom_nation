@@ -42,15 +42,15 @@ export default (bot) => {
         const totalPayment = state.currenQuan * state.price;
 
         const message = `
-<b>🎯 PREMIUM APPLICATION SERVICE</b>
+<b>🎯 KID CAPCUT</b>
 
-<b>📋 Order Confirmation:</b>
-├ <b>Variant:</b> ${state.name}
-├ <b>Price per item:</b> ${state.price.toLocaleString()} VND
-├ <b>Quantity:</b> ${state.currenQuan}
-├ <b>Total Payment:</b> <b>${totalPayment.toLocaleString()} VND</b>
-├ <b>Available stock:</b> ${state.quantity} account
-└ <b>Description:</b> ${state.description}
+<b>📋 Thông tin đơn hàng:</b>
+├ <b>Sản phẩm:</b> ${state.name}
+├ <b>Giá sản phẩm:</b> ${state.price.toLocaleString()} VND
+├ <b>Số lượng:</b> ${state.currenQuan}
+├ <b>Thanh toán:</b> <b>${totalPayment.toLocaleString()} VND</b>
+├ <b>Kho:</b> ${state.quantity} tài khoản
+└ <b>Mô tả:</b> ${state.description}
         `.trim();
 
         const keyboard = Markup.inlineKeyboard([
@@ -63,7 +63,7 @@ export default (bot) => {
             ],
             // Hàng 2: hiển thị số lượng
             [
-                Markup.button.callback(`🔄 Quantity: ${state.currenQuan}`, 'display_quantity')
+                Markup.button.callback(`🔄 Số lượng: ${state.currenQuan}`, 'display_quantity')
             ],
             // Hàng 3: tăng số lượng
             [
@@ -74,11 +74,11 @@ export default (bot) => {
             ],
             // Hàng 4: Thanh toán
             [
-                Markup.button.callback('✅ Pay with Balance', `PAYMENT_${state.id}`),
+                Markup.button.callback('✅ Thanh toán', `PAYMENT_${state.id}`),
             ],
             // Hàng 5: Back
             [
-                Markup.button.callback('↩️ Back', state.backAction || 'SHOW_USER_PRODUCTS_0'),
+                Markup.button.callback('↩️ Quay lại', state.backAction || 'SHOW_USER_PRODUCTS_0'),
             ]
         ]);
 

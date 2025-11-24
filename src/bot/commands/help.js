@@ -3,14 +3,13 @@ import { Markup } from "telegraf";
 export default (bot) => {
     bot.command("help", (ctx) => {
         ctx.reply(
-            "🧭 *Hướng dẫn sử dụng bot DUKANESTORE*\n\n" +
+            "🧭 *Hướng dẫn sử dụng bot KID CAPCUT*\n\n" +
             "Dưới đây là các lệnh mà bạn có thể dùng:\n" +
             "━━━━━━━━━━━━━━━━━━━\n" +
             "💡 /start – Khởi động bot, xem menu chính\n" +
-            "🛍️ /products – Xem danh sách sản phẩm\n" +
-            "💰 /checkout – Kiểm tra thanh toán\n" +
+            
             "❓ /help – Hiển thị hướng dẫn này\n\n" +
-            "📞 Hỗ trợ: @PreStoree",
+            "📞 Hỗ trợ: @Kidkaitoo",
             {
                 parse_mode: "Markdown",
                 ...Markup.inlineKeyboard([

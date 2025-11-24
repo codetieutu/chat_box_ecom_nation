@@ -24,6 +24,8 @@ function createMenuCaption(user) {
 <b>User Details:</b>
 ╰ Username : ${username}
 
+
+🆘🆘🆘 Tele: @kidkaitoo             Zalo: 0396161898
 `.trim();
 }
 // ╰ Balance: ${ user.balance } $
@@ -33,7 +35,7 @@ function createMenuCaption(user) {
 function createMenuKeyboard() {
     return Markup.inlineKeyboard([
         [
-            Markup.button.callback("📦 All Products", "SHOW_USER_PRODUCTS_0"),
+            Markup.button.callback("📦 Xem sản phẩm", "SHOW_USER_PRODUCTS_0"),
             // Markup.button.callback("💎 Premium Apps", "PREMIUM_APPS"),
         ],
         // [
