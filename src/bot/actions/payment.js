@@ -21,9 +21,11 @@ export default (bot) => {
         const totalPayment = quantity * unitPrice;
 
         // 1️⃣ Tạo QR thanh toán PayOS
-        const orderCode = await payment(ctx, totalPayment);
+        const { orderCode, chat_id, msg_id } = await payment(ctx, totalPayment);
         await createOrder({
             id: orderCode,
+            chat_id,
+            msg_id,
             user_id: String(userId),
             product_id: product.id,
             variant_id: variant.id,

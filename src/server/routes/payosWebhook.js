@@ -5,11 +5,11 @@ import crypto from "crypto";
 import { getOrderById, updateOrderStatus } from '../../utils/orderUtil.js';
 import { getProductByQuantity } from '../../utils/stockUtil.js';
 import { exportProductsToTxt } from '../../bot/export.js';
+import { getBot } from "../../bot/botInstance.js";
 
 router.post("/payos/webhook", async (req, res) => {
     try {
         const body = req.body;
-        res.status(200).send("ok");
         // console.log(">>> PAYOS WEBHOOK:", JSON.stringify(body, null, 2));
 
         // ======== 1. Lấy data & signature từ webhook =========
@@ -80,6 +80,8 @@ router.post("/payos/webhook", async (req, res) => {
         // Ở PayOS, code = '00' và desc = 'Thành công' tức là PAID
         if (code === "00" && desc == "success") {
             const order = await getOrderById(orderCode);
+            const bot = getBot();
+            await bot.telegram.deleteMessage(order.chat_id, order.msg_id);
             const products = await getProductByQuantity(order.variant_id, order.quantity, order.id);
             await exportProductsToTxt(order.user_id, products);
             updateOrderStatus(order.id, "success")

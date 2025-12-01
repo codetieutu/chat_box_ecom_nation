@@ -47,7 +47,7 @@ export async function payment(ctx, totalPayment) {
                 }
             });
 
-            await ctx.replyWithPhoto(
+            const msg = await ctx.replyWithPhoto(
                 { source: qrBuffer },
                 {
                     caption: `
@@ -62,7 +62,11 @@ export async function payment(ctx, totalPayment) {
             );
 
 
-            return orderCode;
+            return {
+                orderCode,
+                chat_id: msg.chat.id,
+                msg_id: msg.message_id
+            };
         } catch (error) {
             console.error('Lỗi tạo mã QR:', error);
             // Fallback: gửi mã code dạng text nếu tạo ảnh thất bại

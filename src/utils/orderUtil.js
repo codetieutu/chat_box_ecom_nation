@@ -35,24 +35,12 @@ export async function getAllOrders() {
 export async function getOrderById(id) {
     const [rows] = await db.execute(
         `SELECT 
-        id,
-        user_id,
-        product_id,
-        variant_id,
-        quantity,
-        unit_price,
-        total_amount,
-        status,
-        note,
-        receiver_name,
-        product_name,
-        created_at,
-        updated_at
+        *
      FROM orders
      WHERE id = ?`,
         [id]
     );
-    return rows.length ? rows : null;
+    return rows.length ? rows[0] : null;
 }
 
 export async function getRecentOrder() {
@@ -64,7 +52,7 @@ export async function getRecentOrder() {
                                    LIMIT 5;
                                    `);
         if (rows.length === 0) {
-           []
+            []
         }
         return rows;
     } catch (error) {
@@ -154,6 +142,8 @@ export async function getMonthRevenue(month, year) {
 export async function createOrder(order) {
     const {
         id = null,
+        chat_id = null,
+        msg_id = null,
         user_id = null,
         product_id,
         variant_id = null,
@@ -178,8 +168,10 @@ export async function createOrder(order) {
         status,
         note,
         receiver_name,
-        product_name
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`,
+        product_name,
+        chat_id,
+        msg_id
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)`,
         [
             id,
             user_id,
@@ -191,6 +183,8 @@ export async function createOrder(order) {
             note,
             receiver_name,
             product_name,
+            chat_id,
+            msg_id
         ]
     );
 
